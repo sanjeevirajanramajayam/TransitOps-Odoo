@@ -90,55 +90,9 @@ export default function DispatcherView({ activeSubTab }) {
     fetchData()
   }, [])
 
-  const fetchBackendData = async () => {
-    try {
-      const vRes = await fetch('http://localhost:5000/api/v1/vehicles')
-      const vJson = await vRes.json()
-      if (vJson.success) {
-        setVehicles(vJson.data.map(v => ({
-          id: v.id,
-          reg: v.registrationNumber,
-          model: v.modelName,
-          type: v.vehicleType,
-          cap: `${v.maxLoadCapacity.toLocaleString()} kg`,
-          odo: `${v.currentOdometer.toLocaleString()} km`,
-          status: v.status === 'OnTrip' ? 'On Trip' : v.status === 'InShop' ? 'In Shop' : v.status,
-          img: v.vehicleType === 'Van' ? '/van.png' : v.vehicleType === 'Truck' ? '/truck.png' : v.vehicleType === 'Semi' ? '/semi.png' : '/box_truck.png'
-        })))
-      }
-
-      const dRes = await fetch('http://localhost:5000/api/v1/drivers')
-      const dJson = await dRes.json()
-      if (dJson.success) {
-        setDrivers(dJson.data.map(d => ({
-          id: d.id,
-          name: d.name,
-          status: d.status === 'OnTrip' ? 'On Trip' : d.status === 'OffDuty' ? 'Off Duty' : d.status,
-          safetyScore: d.safetyScore || 100
-        })))
-      }
-
-      const tRes = await fetch('http://localhost:5000/api/v1/trips')
-      const tJson = await tRes.json()
-      if (tJson.success) {
-        setTrips(tJson.data.map(t => ({
-          id: t.id,
-          source: t.source,
-          dest: t.destination,
-          vehicle: t.vehicle?.registrationNumber || 'Unknown',
-          driver: t.driver?.name || 'Unknown',
-          weight: `${t.cargoWeight} kg`,
-          status: t.status === 'OnTrip' ? 'On Trip' : t.status
-        })))
-      }
-    } catch (err) {
-      console.warn("Backend unavailable, running in local fallback mode:", err)
-    }
-  }
-
   useEffect(() => {
     if (activeSubTab === 'Fleet' || activeSubTab === 'Trips') {
-      fetchBackendData()
+      fetchData()
     }
   }, [activeSubTab])
 
