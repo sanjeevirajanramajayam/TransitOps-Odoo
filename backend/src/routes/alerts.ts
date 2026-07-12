@@ -13,7 +13,7 @@ router.get('/active', (req: Request, res: Response) => {
 router.post('/:id/dismiss', (req: Request, res: Response) => {
   const { id } = req.params
   return sendResponse(res, 200, true, `Alert ${id} acknowledged and dismissed successfully`, {
-    id: parseInt(id) || 1
+    id: parseInt(id as string) || 1
   })
 })
 

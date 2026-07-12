@@ -28,7 +28,7 @@ router.post('/upload', validateRequest(uploadDocumentSchema), (req: Request, res
 router.get('/:entityType/:entityId', (req: Request, res: Response) => {
   const { entityType, entityId } = req.params
   return sendResponse(res, 200, true, 'Documents retrieved successfully', [
-    { id: 101, entityType, entityId: parseInt(entityId), documentType: 'CDL License', fileName: 'cdl_alex.pdf', uploadUrl: 'https://transitops-storage.s3.amazonaws.com/documents/cdl_alex.pdf', uploadedAt: '2026-07-10T12:00:00.000Z' }
+    { id: 101, entityType, entityId: parseInt(entityId as string), documentType: 'CDL License', fileName: 'cdl_alex.pdf', uploadUrl: 'https://transitops-storage.s3.amazonaws.com/documents/cdl_alex.pdf', uploadedAt: '2026-07-10T12:00:00.000Z' }
   ])
 })
 

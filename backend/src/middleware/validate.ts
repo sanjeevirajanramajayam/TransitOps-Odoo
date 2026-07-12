@@ -10,7 +10,7 @@ export const validateRequest = (schema: ZodSchema) => {
     } catch (err) {
       if (err instanceof ZodError) {
         sendResponse(res, 422, false, 'Validation failed', {
-          errors: err.errors.map(e => ({
+          errors: err.issues.map((e) => ({
             field: e.path.join('.'),
             message: e.message
           }))

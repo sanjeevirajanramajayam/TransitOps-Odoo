@@ -31,7 +31,7 @@ router.post('/', validateRequest(createMaintenanceSchema), (req: Request, res: R
 router.post('/:id/close', (req: Request, res: Response) => {
   const { id } = req.params
   return sendResponse(res, 200, true, `Maintenance log ${id} closed. Vehicle status restored to Available.`, {
-    id: parseInt(id) || 1,
+    id: parseInt(id as string) || 1,
     status: 'Closed'
   })
 })

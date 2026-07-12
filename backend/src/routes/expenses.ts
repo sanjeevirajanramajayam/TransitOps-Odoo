@@ -40,7 +40,7 @@ router.post('/other', validateRequest(createExpenseSchema), (req: Request, res: 
 router.get('/vehicle/:id', (req: Request, res: Response) => {
   const { id } = req.params
   return sendResponse(res, 200, true, `Aggregate operational costs for vehicle ${id} computed successfully`, {
-    vehicleId: parseInt(id) || 1,
+    vehicleId: parseInt(id as string) || 1,
     totalFuel: 1240.50,
     totalMaintenance: 600.00,
     totalOther: 195.00,

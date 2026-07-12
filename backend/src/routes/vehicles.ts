@@ -26,7 +26,7 @@ router.get('/', (req: Request, res: Response) => {
 router.get('/:id', (req: Request, res: Response) => {
   const { id } = req.params
   return sendResponse(res, 200, true, 'Vehicle retrieved successfully', {
-    id: parseInt(id) || 1,
+    id: parseInt(id as string) || 1,
     registrationNumber: 'TX-8902',
     modelName: 'Ford Transit',
     vehicleType: 'Van',
@@ -50,7 +50,7 @@ router.put('/:id', validateRequest(updateVehicleSchema), (req: Request, res: Res
   const { id } = req.params
   const data = req.body
   return sendResponse(res, 200, true, 'Vehicle updated successfully', {
-    id: parseInt(id) || 1,
+    id: parseInt(id as string) || 1,
     registrationNumber: 'TX-8902',
     modelName: 'Ford Transit',
     vehicleType: 'Van',
@@ -65,7 +65,7 @@ router.put('/:id', validateRequest(updateVehicleSchema), (req: Request, res: Res
 router.delete('/:id', (req: Request, res: Response) => {
   const { id } = req.params
   return sendResponse(res, 200, true, `Vehicle ${id} retired successfully`, {
-    id: parseInt(id) || 1,
+    id: parseInt(id as string) || 1,
     status: 'Retired'
   })
 })

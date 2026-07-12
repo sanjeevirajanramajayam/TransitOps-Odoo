@@ -40,7 +40,7 @@ router.post('/', validateRequest(createTripSchema), (req: Request, res: Response
 router.post('/:id/dispatch', (req: Request, res: Response) => {
   const { id } = req.params
   return sendResponse(res, 200, true, `Trip ${id} successfully dispatched. Vehicle and driver status updated to On Trip.`, {
-    id: parseInt(id) || 1,
+    id: parseInt(id as string) || 1,
     status: 'Dispatched'
   })
 })
@@ -49,7 +49,7 @@ router.post('/:id/complete', validateRequest(completeTripSchema), (req: Request,
   const { id } = req.params
   const { actualDistanceTraveled, fuelConsumed, finalOdometer } = req.body
   return sendResponse(res, 200, true, `Trip ${id} completed. Vehicle odometer updated to ${finalOdometer}. Vehicle and driver are now Available.`, {
-    id: parseInt(id) || 1,
+    id: parseInt(id as string) || 1,
     actualDistanceTraveled,
     fuelConsumed,
     status: 'Completed'
@@ -59,7 +59,7 @@ router.post('/:id/complete', validateRequest(completeTripSchema), (req: Request,
 router.post('/:id/cancel', (req: Request, res: Response) => {
   const { id } = req.params
   return sendResponse(res, 200, true, `Trip ${id} cancelled. Vehicle and driver are now Available.`, {
-    id: parseInt(id) || 1,
+    id: parseInt(id as string) || 1,
     status: 'Cancelled'
   })
 })

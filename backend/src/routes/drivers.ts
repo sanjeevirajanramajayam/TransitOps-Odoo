@@ -27,7 +27,7 @@ router.get('/', (req: Request, res: Response) => {
 router.get('/:id', (req: Request, res: Response) => {
   const { id } = req.params
   return sendResponse(res, 200, true, 'Driver retrieved successfully', {
-    id: parseInt(id) || 1,
+    id: parseInt(id as string) || 1,
     name: 'Alex Rivera',
     licenseNumber: 'CDL-A-9012',
     licenseCategory: 'Class A',
@@ -52,7 +52,7 @@ router.put('/:id', validateRequest(updateDriverSchema), (req: Request, res: Resp
   const { id } = req.params
   const data = req.body
   return sendResponse(res, 200, true, 'Driver updated successfully', {
-    id: parseInt(id) || 1,
+    id: parseInt(id as string) || 1,
     name: 'Alex Rivera',
     licenseNumber: 'CDL-A-9012',
     licenseCategory: 'Class A',
