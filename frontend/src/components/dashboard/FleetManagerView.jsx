@@ -1,15 +1,15 @@
 import { useState } from 'react'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line } from 'recharts'
 import {
   Truck, Wrench, ShieldAlert, Plus, Calendar, Settings,
   MapPin, Fuel, FileCheck, Activity,
-  TrendingUp, Users, IndianRupee, AlertOctagon, Search, Map, ChevronDown
+  TrendingUp, Users, IndianRupee, AlertOctagon, Search, Map, ChevronDown, ArrowLeft, Route, AlertTriangle, CheckCircle, Clock
 } from 'lucide-react'
 
-export default function FleetManagerView({ activeSubTab }) {
-  const [vehicles] = useState([
+export default function FleetManagerView({ activeSubTab, setActiveTab }) {
+  const [vehicles, setVehicles] = useState([
     { id: 1, reg: 'TX-8902', model: 'Ford Transit', type: 'Van', cap: '3,500 lbs', odo: '45,200 mi', status: 'Available' },
     { id: 2, reg: 'CA-4412', model: 'Freightliner M2', type: 'Truck', cap: '15,000 lbs', odo: '120,400 mi', status: 'On Trip' },
     { id: 3, reg: 'NY-1029', model: 'Ram ProMaster', type: 'Van', cap: '4,000 lbs', odo: '28,100 mi', status: 'In Shop' },
@@ -17,11 +17,29 @@ export default function FleetManagerView({ activeSubTab }) {
     { id: 5, reg: 'IL-5050', model: 'Isuzu NPR', type: 'Box Truck', cap: '10,000 lbs', odo: '95,300 mi', status: 'Retired' }
   ])
 
-  const [driversList] = useState([
+  const [driversList, setDriversList] = useState([
     { id: 1, name: 'Alex Rivera', license: 'CDL-A-9012', expiry: '2027-12-31', contact: '+1 (555) 123-4567', safetyScore: 98, status: 'Available', vehicle: 'TX-8902', img: '/driver1.png', email: 'alex.r@transitops.com' },
     { id: 2, name: 'Priya Patel', license: 'CDL-A-7019', expiry: '2028-04-15', contact: '+1 (555) 987-6543', safetyScore: 95, status: 'On Trip', vehicle: 'CA-4412', img: '/driver2.png', email: 'priya.p@transitops.com' },
     { id: 3, name: 'Marcus Vance', license: 'CDL-B-2211', expiry: '2027-09-20', contact: '+1 (555) 234-5678', safetyScore: 82, status: 'Suspended', vehicle: 'None', img: '/driver3.png', email: 'marcus.v@transitops.com' },
     { id: 4, name: 'Sarah Connor', license: 'CDL-A-3388', expiry: '2026-08-01', contact: '+1 (555) 345-6789', safetyScore: 91, status: 'Available', vehicle: 'FL-7711', img: '/driver2.png', email: 'sarah.c@transitops.com' }
+  ])
+
+  // New vehicle & driver form states
+  const [newVehicle, setNewVehicle] = useState({ reg: '', model: '', type: 'Van', cap: '', odo: '', status: 'Available' })
+  const [newDriver, setNewDriver] = useState({ name: '', license: '', expiry: '', contact: '', safetyScore: 95, status: 'Available', vehicle: 'None', email: '' })
+
+  // Dispatch form states
+  const [dispatchSource, setDispatchSource] = useState('')
+  const [dispatchDestination, setDispatchDestination] = useState('')
+  const [dispatchWeight, setDispatchWeight] = useState('')
+  const [dispatchVehicleId, setDispatchVehicleId] = useState('')
+  const [dispatchDriverId, setDispatchDriverId] = useState('')
+  const [dispatchError, setDispatchError] = useState('')
+  const [dispatchSuccess, setDispatchSuccess] = useState('')
+
+  const [activeTrips, setActiveTrips] = useState([
+    { id: 1, source: 'Dallas, TX', dest: 'Houston, TX', vehicle: 'TX-8902', driver: 'Alex Rivera', weight: '2,800 lbs', status: 'On Trip' },
+    { id: 2, source: 'Los Angeles, CA', dest: 'San Jose, CA', vehicle: 'CA-4412', driver: 'Priya Patel', weight: '11,200 lbs', status: 'Dispatched' }
   ])
 
   const [vehicleSearch, setVehicleSearch] = useState('')
@@ -86,6 +104,90 @@ export default function FleetManagerView({ activeSubTab }) {
     const matchesStatus = vehicleStatusFilter === 'All' || v.status === vehicleStatusFilter
     return matchesSearch && matchesType && matchesStatus
   })
+
+  const handleVehicleSubmit = (e) => {
+    e.preventDefault()
+    const id = vehicles.length + 1
+    setVehicles([...vehicles, { id, ...newVehicle }])
+    setNewVehicle({ reg: '', model: '', type: 'Van', cap: '', odo: '0 mi', status: 'Available' })
+    setActiveTab('Vehicles')
+  }
+
+  const handleDriverSubmit = (e) => {
+    e.preventDefault()
+    const id = driversList.length + 1
+    const img = `/driver${(id % 3) + 1}.png`
+    setDriversList([...driversList, { id, img, ...newDriver }])
+    setNewDriver({ name: '', license: '', expiry: '', contact: '', safetyScore: 95, status: 'Available', vehicle: 'None', email: '' })
+    setActiveTab('Drivers')
+  }
+
+  const handleDispatch = (e) => {
+    e.preventDefault()
+    setDispatchError('')
+    setDispatchSuccess('')
+
+    if (!dispatchSource || !dispatchDestination || !dispatchWeight || !dispatchVehicleId || !dispatchDriverId) {
+      setDispatchError('Please fill in all fields to dispatch the trip')
+      return
+    }
+
+    const driver = driversList.find(d => d.id.toString() === dispatchDriverId)
+    const vehicle = vehicles.find(v => v.id.toString() === dispatchVehicleId)
+
+    if (!driver || !vehicle) return
+
+    const expiryDate = new Date(driver.expiry)
+    const today = new Date()
+    if (expiryDate <= today) {
+      setDispatchError(`Compliance Guard: Driver ${driver.name} has an expired license (Expired: ${driver.expiry})`)
+      return
+    }
+
+    if (driver.status === 'Suspended') {
+      setDispatchError(`Compliance Guard: Driver ${driver.name} is currently suspended and cannot be dispatched`)
+      return
+    }
+
+    if (driver.status === 'On Trip') {
+      setDispatchError(`Availability Guard: Driver ${driver.name} is currently on another trip`)
+      return
+    }
+
+    if (vehicle.status !== 'Available') {
+      setDispatchError(`Availability Guard: Vehicle ${vehicle.reg} is currently ${vehicle.status} and unavailable`)
+      return
+    }
+
+    const inputWeight = parseFloat(dispatchWeight)
+    const vehicleMaxCap = parseFloat(vehicle.cap.replace(/[^0-9]/g, '')) || 5000
+    if (inputWeight > vehicleMaxCap) {
+      setDispatchError(`Capacity Guard: Cargo weight (${inputWeight} lbs) exceeds the vehicle's maximum capacity (${vehicle.cap} for ${vehicle.reg})`)
+      return
+    }
+
+    const newTrip = {
+      id: Date.now(),
+      source: dispatchSource,
+      dest: dispatchDestination,
+      vehicle: vehicle.reg,
+      driver: driver.name,
+      weight: `${inputWeight.toLocaleString()} lbs`,
+      status: 'Dispatched'
+    }
+
+    // Update statuses
+    setVehicles(vehicles.map(v => v.id === vehicle.id ? { ...v, status: 'On Trip' } : v))
+    setDriversList(driversList.map(d => d.id === driver.id ? { ...d, status: 'On Trip', vehicle: vehicle.reg } : d))
+
+    setActiveTrips([newTrip, ...activeTrips])
+    setDispatchSuccess(`Trip successfully dispatched! ${vehicle.reg} and ${driver.name} are now marked On Trip.`)
+    setDispatchSource('')
+    setDispatchDestination('')
+    setDispatchWeight('')
+    setDispatchVehicleId('')
+    setDispatchDriverId('')
+  }
 
   // Render Sub-tab Content
   const renderSubContent = () => {
@@ -219,7 +321,7 @@ export default function FleetManagerView({ activeSubTab }) {
 
                 {/* Custom Status Selector dropdown */}
                 <div className="relative w-36">
-                  <select
+                   <select
                     value={vehicleStatusFilter}
                     onChange={(e) => setVehicleStatusFilter(e.target.value)}
                     className="appearance-none pl-3 pr-8 py-1.5 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none"
@@ -233,7 +335,7 @@ export default function FleetManagerView({ activeSubTab }) {
                   <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
                 </div>
 
-                <Button size="sm" className="h-8 text-sm font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 gap-1.5 border border-zinc-200 dark:border-zinc-800 select-none">
+                <Button onClick={() => setActiveTab('Add Vehicle')} size="sm" className="h-8 text-sm font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 gap-1.5 border border-zinc-200 dark:border-zinc-800 select-none">
                   <Plus className="h-4 w-4" /> Add Vehicle
                 </Button>
               </div>
@@ -257,11 +359,7 @@ export default function FleetManagerView({ activeSubTab }) {
                           alt={v.model} 
                           className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
-                        <span className={`absolute top-3 right-3 px-2.5 py-0.5 text-[9px] font-bold uppercase rounded-full border ${
-                          v.status === 'Available' ? 'bg-zinc-50/90 dark:bg-zinc-900/95 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-850' :
-                          v.status === 'On Trip' ? 'bg-zinc-900/95 dark:bg-zinc-100/95 text-white dark:text-zinc-900 border-zinc-800 dark:border-zinc-200' :
-                          'bg-zinc-100/90 dark:bg-zinc-800/90 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
-                        }`}>
+                        <span className={'absolute top-3 right-3 px-2.5 py-0.5 text-[9px] font-bold uppercase rounded-full border ' + (v.status === 'Available' ? 'bg-zinc-50/90 dark:bg-zinc-900/95 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700' : v.status === 'On Trip' ? 'bg-zinc-900/95 dark:bg-zinc-100/95 text-white dark:text-zinc-900 border-zinc-800 dark:border-zinc-200' : 'bg-zinc-100/90 dark:bg-zinc-800/90 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700')}>
                           {v.status}
                         </span>
                       </div>
@@ -320,7 +418,7 @@ export default function FleetManagerView({ activeSubTab }) {
                 />
               </div>
 
-              <Button size="sm" className="h-8 text-sm font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 gap-1.5 border border-zinc-200 dark:border-zinc-800 select-none">
+              <Button onClick={() => setActiveTab('Add Driver')} size="sm" className="h-8 text-sm font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 gap-1.5 border border-zinc-200 dark:border-zinc-800 select-none">
                 <Plus className="h-4 w-4" /> Add Driver
               </Button>
             </div>
@@ -357,11 +455,7 @@ export default function FleetManagerView({ activeSubTab }) {
                   {/* Footer Stats / Badges */}
                   <div className="border-t border-zinc-100 dark:border-zinc-900 pt-3 flex justify-between items-center text-xs">
                     <div className="flex gap-2">
-                      <span className={`px-2 py-0.5 text-[9px] font-bold rounded border ${
-                        driver.status === 'Available' ? 'bg-zinc-50 dark:bg-zinc-900/50 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800' :
-                        driver.status === 'On Trip' ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-800 dark:border-zinc-200' :
-                        'bg-zinc-100 dark:bg-zinc-900/50 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800'
-                      }`}>
+                      <span className={'px-2 py-0.5 text-[9px] font-bold rounded border ' + (driver.status === 'Available' ? 'bg-zinc-50 dark:bg-zinc-900/50 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800' : driver.status === 'On Trip' ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-800 dark:border-zinc-200' : 'bg-zinc-100 dark:bg-zinc-900/50 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800')}>
                         {driver.status}
                       </span>
                       <span className="px-2 py-0.5 text-[9px] font-bold bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 rounded">
@@ -833,6 +927,396 @@ export default function FleetManagerView({ activeSubTab }) {
                     <input type="checkbox" className="accent-zinc-900 dark:accent-zinc-100 h-4 w-4" />
                   </div>
                 </div>
+              </Card>
+            </div>
+          </div>
+        )
+
+      case 'Add Vehicle':
+        return (
+          <div className="max-w-2xl mx-auto space-y-6 py-4">
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                onClick={() => setActiveTab('Vehicles')} 
+                className="h-8 w-8 p-0 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 bg-transparent"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div>
+                <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">Register New Vehicle</h2>
+                <p className="text-xs text-zinc-400">Add a new commercial vehicle to the active fleet registry.</p>
+              </div>
+            </div>
+
+            <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
+              <form onSubmit={handleVehicleSubmit}>
+                <CardContent className="p-6 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">Registration Number</label>
+                      <input 
+                        type="text" 
+                        required
+                        placeholder="e.g. TX-8902" 
+                        value={newVehicle.reg}
+                        onChange={(e) => setNewVehicle({...newVehicle, reg: e.target.value})}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">Model Name</label>
+                      <input 
+                        type="text" 
+                        required
+                        placeholder="e.g. Ford Transit" 
+                        value={newVehicle.model}
+                        onChange={(e) => setNewVehicle({...newVehicle, model: e.target.value})}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">Vehicle Type</label>
+                      <div className="relative">
+                        <select 
+                          value={newVehicle.type}
+                          onChange={(e) => setNewVehicle({...newVehicle, type: e.target.value})}
+                          className="w-full appearance-none pl-3 pr-8 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        >
+                          <option value="Van">Van</option>
+                          <option value="Truck">Truck</option>
+                          <option value="Semi">Semi</option>
+                          <option value="Box Truck">Box Truck</option>
+                        </select>
+                        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">Max Capacity</label>
+                      <input 
+                        type="text" 
+                        required
+                        placeholder="e.g. 3,500 lbs" 
+                        value={newVehicle.cap}
+                        onChange={(e) => setNewVehicle({...newVehicle, cap: e.target.value})}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">Initial Odometer Reading</label>
+                      <input 
+                        type="text" 
+                        required
+                        placeholder="e.g. 45,200 mi" 
+                        value={newVehicle.odo}
+                        onChange={(e) => setNewVehicle({...newVehicle, odo: e.target.value})}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">Status</label>
+                      <div className="relative">
+                        <select 
+                          value={newVehicle.status}
+                          onChange={(e) => setNewVehicle({...newVehicle, status: e.target.value})}
+                          className="w-full appearance-none pl-3 pr-8 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        >
+                          <option value="Available">Available</option>
+                          <option value="On Trip">On Trip</option>
+                          <option value="In Shop">In Shop</option>
+                          <option value="Retired">Retired</option>
+                        </select>
+                        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="px-6 pb-6 pt-2 flex justify-end gap-3 border-t border-zinc-100 dark:border-zinc-800/80 mt-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setActiveTab('Vehicles')}
+                    className="h-9 px-4 text-xs font-semibold rounded-lg border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 select-none bg-transparent"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="h-9 px-4 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 select-none"
+                  >
+                    Register Asset
+                  </Button>
+                </CardFooter>
+              </form>
+            </Card>
+          </div>
+        )
+
+      case 'Add Driver':
+        return (
+          <div className="max-w-2xl mx-auto space-y-6 py-4">
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                onClick={() => setActiveTab('Drivers')} 
+                className="h-8 w-8 p-0 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 bg-transparent"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div>
+                <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">Register New Operator</h2>
+                <p className="text-xs text-zinc-400 font-medium">Add a new commercial driver profile to the fleet operations.</p>
+              </div>
+            </div>
+
+            <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
+              <form onSubmit={handleDriverSubmit}>
+                <CardContent className="p-6 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">Driver Full Name</label>
+                      <input 
+                        type="text" 
+                        required
+                        placeholder="e.g. Sarah Connor" 
+                        value={newDriver.name}
+                        onChange={(e) => setNewDriver({...newDriver, name: e.target.value})}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">CDL License Number</label>
+                      <input 
+                        type="text" 
+                        required
+                        placeholder="e.g. CDL-A-3388" 
+                        value={newDriver.license}
+                        onChange={(e) => setNewDriver({...newDriver, license: e.target.value})}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">License Expiration Date</label>
+                      <input 
+                        type="date" 
+                        required
+                        value={newDriver.expiry}
+                        onChange={(e) => setNewDriver({...newDriver, expiry: e.target.value})}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">Contact Number</label>
+                      <input 
+                        type="text" 
+                        required
+                        placeholder="e.g. +1 (555) 345-6789" 
+                        value={newDriver.contact}
+                        onChange={(e) => setNewDriver({...newDriver, contact: e.target.value})}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">Email Address</label>
+                      <input 
+                        type="email" 
+                        required
+                        placeholder="e.g. sarah.c@transitops.com" 
+                        value={newDriver.email}
+                        onChange={(e) => setNewDriver({...newDriver, email: e.target.value})}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">Status</label>
+                      <div className="relative">
+                        <select 
+                          value={newDriver.status}
+                          onChange={(e) => setNewDriver({...newDriver, status: e.target.value})}
+                          className="w-full appearance-none pl-3 pr-8 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        >
+                          <option value="Available">Available</option>
+                          <option value="On Trip">On Trip</option>
+                          <option value="Suspended">Suspended</option>
+                        </select>
+                        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="px-6 pb-6 pt-2 flex justify-end gap-3 border-t border-zinc-100 dark:border-zinc-800/80 mt-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setActiveTab('Drivers')}
+                    className="h-9 px-4 text-xs font-semibold rounded-lg border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 select-none bg-transparent"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="h-9 px-4 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 select-none"
+                  >
+                    Create Profile
+                  </Button>
+                </CardFooter>
+              </form>
+            </Card>
+          </div>
+        )
+
+      case 'Assign Dispatch':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Fleet Dispatch Command</h3>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="lg:col-span-1 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
+                <CardHeader>
+                  <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Dispatch Command Form</CardTitle>
+                  <CardDescription className="text-xs text-zinc-500">Initiate new dispatches. Auto-checks driver licenses, vehicle statuses, and weight limits.</CardDescription>
+                </CardHeader>
+                <form onSubmit={handleDispatch}>
+                  <CardContent className="space-y-4">
+                    {dispatchError && (
+                      <div className="p-3 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-rose-500 flex items-start gap-2.5">
+                        <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                        <span>{dispatchError}</span>
+                      </div>
+                    )}
+                    {dispatchSuccess && (
+                      <div className="p-3 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-emerald-500 flex items-start gap-2.5">
+                        <CheckCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                        <span>{dispatchSuccess}</span>
+                      </div>
+                    )}
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">Trip Origin (Source)</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Dallas, TX"
+                        value={dispatchSource}
+                        onChange={(e) => setDispatchSource(e.target.value)}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">Trip Destination</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Houston, TX"
+                        value={dispatchDestination}
+                        onChange={(e) => setDispatchDestination(e.target.value)}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">Cargo Weight (lbs)</label>
+                      <input
+                        type="number"
+                        required
+                        placeholder="e.g. 2500"
+                        value={dispatchWeight}
+                        onChange={(e) => setDispatchWeight(e.target.value)}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">Assign Vehicle</label>
+                      <div className="relative">
+                        <select
+                          value={dispatchVehicleId}
+                          onChange={(e) => setDispatchVehicleId(e.target.value)}
+                          className="w-full appearance-none pl-3 pr-8 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        >
+                          <option value="">Select vehicle...</option>
+                          {vehicles.map((v) => (
+                            <option key={v.id} value={v.id}>
+                              {v.reg} ({v.model}) - Max {v.cap} [{v.status}]
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">Assign Driver</label>
+                      <div className="relative">
+                        <select
+                          value={dispatchDriverId}
+                          onChange={(e) => setDispatchDriverId(e.target.value)}
+                          className="w-full appearance-none pl-3 pr-8 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        >
+                          <option value="">Select driver...</option>
+                          {driversList.map((d) => (
+                            <option key={d.id} value={d.id}>
+                              {d.name} - CDL Exp: {d.expiry} [{d.status}]
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="p-6 pt-2">
+                    <Button type="submit" className="w-full h-9 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 select-none">
+                      Dispatch Trip
+                    </Button>
+                  </CardFooter>
+                </form>
+              </Card>
+
+              <Card className="lg:col-span-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
+                <CardHeader>
+                  <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Active Operational Trips</CardTitle>
+                  <CardDescription className="text-xs text-zinc-500">Live operational routes, tracking payloads, and driver statuses.</CardDescription>
+                </CardHeader>
+                <CardContent className="overflow-x-auto">
+                  <table className="w-full text-left text-sm border-collapse">
+                    <thead>
+                      <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 font-medium text-xs">
+                        <th className="py-3 px-4">Route</th>
+                        <th className="py-3 px-4">Vehicle</th>
+                        <th className="py-3 px-4">Driver</th>
+                        <th className="py-3 px-4">Cargo Weight</th>
+                        <th className="py-3 px-4">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeTrips.map((trip) => (
+                        <tr key={trip.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 text-xs text-zinc-800 dark:text-zinc-200">
+                          <td className="py-3.5 px-4 font-semibold text-zinc-900 dark:text-zinc-50">
+                            <span className="flex items-center gap-1.5">
+                              {trip.source} <ArrowLeft className="h-3 w-3 rotate-180 text-zinc-400" /> {trip.dest}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4">{trip.vehicle}</td>
+                          <td className="py-3.5 px-4 font-medium">{trip.driver}</td>
+                          <td className="py-3.5 px-4">{trip.weight}</td>
+                          <td className="py-3.5 px-4">
+                            <span className={trip.status === 'On Trip' ? 'px-2.5 py-0.5 text-xs font-semibold rounded-full border bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-800 dark:border-zinc-200' : 'px-2.5 py-0.5 text-xs font-semibold rounded-full border bg-zinc-50 dark:bg-zinc-900/50 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700'}>
+                              {trip.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </CardContent>
               </Card>
             </div>
           </div>
