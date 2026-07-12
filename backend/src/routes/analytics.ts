@@ -1,25 +1,84 @@
-import { Router, Request, Response } from 'express'
-import { sendResponse } from '../utils/response'
+import { Router, Request, Response, NextFunction } from 'express';
+import { sendResponse } from '../utils/response';
+import prisma from '../db';
 
-const router = Router()
+const router = Router();
 
-router.get('/kpis', (req: Request, res: Response) => {
-  return sendResponse(res, 200, true, 'KPI metrics retrieved successfully', {
-    activeVehicles: 53,
-    availableVehicles: 42,
-    vehiclesInMaintenance: 5,
-    activeTrips: 18,
-    pendingTrips: 9,
-    driversOnDuty: 26,
-    fleetUtilization: 81
-  })
-})
+router.get('/kpis', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // 1. activeVehicles: count of vehicles where status is 'OnTrip'
+    const activeVehicles = await prisma.transitVehicle.count({
+      where: { status: 'OnTrip' }
+    });
 
-router.get('/reports', (req: Request, res: Response) => {
-  return sendResponse(res, 200, true, 'Financial and operational reports retrieved successfully', [
-    { vehicleId: 1, registrationNumber: 'TX-8902', modelName: 'Ford Transit', fuelEfficiency: 12.4, roi: 1.25, totalRevenue: 1500, totalOperationalCost: 1200, netProfit: 300 },
-    { vehicleId: 2, registrationNumber: 'CA-4412', modelName: 'Freightliner M2', fuelEfficiency: 8.2, roi: 1.45, totalRevenue: 8500, totalOperationalCost: 6200, netProfit: 2300 }
-  ])
-})
+    // 2. availableVehicles: count of vehicles where status is 'Available'
+    const availableVehicles = await prisma.transitVehicle.count({
+      where: { status: 'Available' }
+    });
 
-export default router
+    // 3. vehiclesInMaintenance: count of vehicles where status is 'InShop'
+    const vehiclesInMaintenance = await prisma.transitVehicle.count({
+      where: { status: 'InShop' }
+    });
+
+    // 4. activeTrips: count of trips where status is 'Dispatched'
+    const activeTrips = await prisma.transitTrip.count({
+      where: { status: 'Dispatched' }
+    });
+
+    // 5. pendingTrips: count of trips where status is 'Draft'
+    const pendingTrips = await prisma.transitTrip.count({
+      where: { status: 'Draft' }
+    });
+
+    // 6. driversOnDuty: count of drivers who are Available or OnTrip (meaning active/ready)
+    const driversOnDuty = await prisma.transitDriver.count({
+      where: {
+        status: { in: ['Available', 'OnTrip'] }
+      }
+    });
+
+    // 7. fleetUtilization: percentage of active vehicles out of total operational fleet
+    const totalOperational = activeVehicles + availableVehicles + vehiclesInMaintenance;
+    const fleetUtilization = totalOperational > 0 
+      ? Math.round((activeVehicles / totalOperational) * 100) 
+      : 0;
+
+    return sendResponse(res, 200, true, 'KPI metrics retrieved successfully', {
+      activeVehicles,
+      availableVehicles,
+      vehiclesInMaintenance,
+      activeTrips,
+      pendingTrips,
+      driversOnDuty,
+      fleetUtilization
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/reports', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // High-performance querying of the pre-existing database view
+    const rows = await prisma.$queryRaw<any[]>`SELECT * FROM vehicle_analytics`;
+
+    // Map database snake_case fields to camelCase response format
+    const reports = rows.map((row) => ({
+      vehicleId: row.id,
+      registrationNumber: row.registration_number,
+      modelName: row.model_name,
+      fuelEfficiency: Number(row.fuel_efficiency || 0),
+      roi: Number(row.roi || 0),
+      totalRevenue: Number(row.total_revenue || 0),
+      totalOperationalCost: Number(row.total_operational_cost || 0),
+      netProfit: Number(row.net_profit || 0)
+    }));
+
+    return sendResponse(res, 200, true, 'Financial and operational reports retrieved successfully', reports);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export default router;
