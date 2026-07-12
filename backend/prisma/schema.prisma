@@ -126,7 +126,6 @@ model TransitDocument {
   @@map("transit_document")
 }
 
-
 view VehicleAnalytics {
   id                   Int    @unique
   registrationNumber   String @map("registration_number")
