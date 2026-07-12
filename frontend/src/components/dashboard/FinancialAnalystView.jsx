@@ -17,6 +17,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
   // States for CRUD Logs - initialized to empty arrays
   const [expenses, setExpenses] = useState([])
   const [fuelLogs, setFuelLogs] = useState([])
+  const [reports, setReports] = useState([])
 
   const [availableVehicles, setAvailableVehicles] = useState([
     { id: 1, reg: 'TX-8902', model: 'Ford Transit' },
@@ -105,11 +106,24 @@ export default function FinancialAnalystView({ activeSubTab }) {
     }
   }
 
+  const fetchReportsFromBackend = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/v1/analytics/reports')
+      const json = await res.json()
+      if (json.success) {
+        setReports(json.data)
+      }
+    } catch (err) {
+      console.warn("Analytics reports endpoint offline")
+    }
+  }
+
   // Load backend data on mount or when tab changes
   useEffect(() => {
-    if (activeSubTab === 'Fuel and Expenses') {
+    if (activeSubTab === 'Fuel and Expenses' || activeSubTab === 'ROI Reports' || activeSubTab === 'Fuel Optimization') {
       fetchLogsFromBackend()
       fetchVehiclesFromBackend()
+      fetchReportsFromBackend()
     }
   }, [activeSubTab])
 
@@ -414,7 +428,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                             onChange={(e) => setFuelReg(e.target.value)}
                             required
                             disabled={isSubmitting}
-                            className="w-full appearance-none px-3 py-1.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs pr-8 text-zinc-900 dark:text-zinc-100"
+                            className="w-full appearance-none px-3 py-1.5 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs pr-8 text-zinc-900 dark:text-zinc-100"
                           >
                             <option value="">Select vehicle...</option>
                             {availableVehicles.map(v => (
@@ -475,7 +489,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                             value={expReg}
                             onChange={(e) => setExpReg(e.target.value)}
                             required
-                            className="w-full appearance-none px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs pr-8 text-zinc-900 dark:text-zinc-100"
+                            className="w-full appearance-none px-3 py-1.5 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs pr-8 text-zinc-900 dark:text-zinc-100"
                           >
                             <option value="">Select vehicle...</option>
                             {availableVehicles.map(v => (
@@ -488,7 +502,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold uppercase text-zinc-400">Expense Type</label>
                         <div className="relative">
-                          <select value={expType} onChange={(e) => setExpType(e.target.value)} className="w-full appearance-none px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100">
+                          <select value={expType} onChange={(e) => setExpType(e.target.value)} className="w-full appearance-none px-3 py-1.5 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100">
                             <option value="Maintenance">Maintenance</option>
                             <option value="Tolls">Tolls</option>
                             <option value="Insurance">Insurance</option>
@@ -684,18 +698,23 @@ export default function FinancialAnalystView({ activeSubTab }) {
           </div>
         )
 
-      case 'ROI Reports':
+      case 'ROI Reports': {
+        const totalRevenue = reports.reduce((acc, r) => acc + r.totalRevenue, 0)
+        const totalOps = reports.reduce((acc, r) => acc + r.totalOperationalCost, 0)
+        const profitMargin = totalRevenue > 0 ? ((totalRevenue - totalOps) / totalRevenue) * 100 : 0
+        const avgRoi = reports.length > 0 ? (reports.reduce((acc, r) => acc + r.roi, 0) / reports.length) * 100 : 0
+
         return (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
                 <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 text-zinc-400 dark:text-zinc-500">
-                  <span className="text-sm font-medium">Total Profit Margin</span>
+                  <span className="text-sm font-medium">Average ROI %</span>
                   <TrendingUp className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-extrabold tracking-tight">43.7%</div>
-                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">+2.4% net margin gain since last month</p>
+                  <div className="text-3xl font-extrabold tracking-tight">{avgRoi.toFixed(1)}%</div>
+                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">Average return on acquisition cost</p>
                 </CardContent>
               </Card>
 
@@ -705,8 +724,8 @@ export default function FinancialAnalystView({ activeSubTab }) {
                   <IndianRupee className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-extrabold tracking-tight">₹11,500</div>
-                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">47.8% dedicated to fuel allocations</p>
+                  <div className="text-3xl font-extrabold tracking-tight">₹{totalOps.toLocaleString()}</div>
+                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">Aggregate operational ledger cost</p>
                 </CardContent>
               </Card>
 
@@ -716,80 +735,177 @@ export default function FinancialAnalystView({ activeSubTab }) {
                   <IndianRupee className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-extrabold tracking-tight">₹24,000</div>
-                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">Reflects 6 active dispatched routes</p>
+                  <div className="text-3xl font-extrabold tracking-tight">₹{totalRevenue.toLocaleString()}</div>
+                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">Reflects all completed dispatches</p>
                 </CardContent>
               </Card>
             </div>
 
             <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
               <CardHeader>
-                <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Revenue vs Operating Cost Trends</CardTitle>
-                <CardDescription className="text-[10px] text-zinc-500">Aggregate monthly cashflows in INR (₹)</CardDescription>
+                <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Revenue vs Operating Cost per Vehicle</CardTitle>
+                <CardDescription className="text-[10px] text-zinc-500">Acquisition cost profitability comparison in INR (₹)</CardDescription>
               </CardHeader>
               <CardContent className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={financialData}>
-                    <XAxis dataKey="name" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
-                    <Tooltip contentStyle={{ background: '#09090b', border: '1px solid #27272a', borderRadius: '8px', color: '#fff' }} />
-                    <Area type="monotone" dataKey="revenue" stroke="#18181b" fillOpacity={0.1} fill="url(#colorRev)" strokeWidth={2} />
-                    <Area type="monotone" dataKey="costs" stroke="#71717a" fillOpacity={0.05} fill="url(#colorCost)" strokeWidth={1.5} />
-                    <defs>
-                      <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#18181b" stopOpacity={0.2}/>
-                        <stop offset="95%" stopColor="#18181b" stopOpacity={0}/>
-                      </linearGradient>
-                      <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#71717a" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#71717a" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                  </AreaChart>
-                </ResponsiveContainer>
+                {reports.length === 0 ? (
+                  <div className="h-full flex items-center justify-center text-xs text-zinc-400">No vehicle data logged.</div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={reports}>
+                      <XAxis dataKey="registrationNumber" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                      <Tooltip contentStyle={{ background: '#09090b', border: '1px solid #27272a', borderRadius: '8px', color: '#fff' }} />
+                      <Area type="monotone" dataKey="totalRevenue" name="Revenue" stroke="#10b981" fillOpacity={0.1} fill="url(#colorRev)" strokeWidth={2} />
+                      <Area type="monotone" dataKey="totalOperationalCost" name="Costs" stroke="#ef4444" fillOpacity={0.05} fill="url(#colorCost)" strokeWidth={1.5} />
+                      <defs>
+                        <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.1}/>
+                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
-          </div>
-        )
 
-      case 'Fuel Optimization':
-        return (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
+            <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
               <CardHeader>
-                <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Expense Breakdown</CardTitle>
-                <CardDescription className="text-xs text-zinc-500">Operating expense allocation by category</CardDescription>
+                <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Vehicle Investment & ROI Breakdown</CardTitle>
+                <CardDescription className="text-xs text-zinc-500">Profitability metrics of active fleet vehicles computed against acquisition cost.</CardDescription>
               </CardHeader>
-              <CardContent className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={expenseBreakdown} layout="vertical">
-                    <XAxis type="number" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
-                    <YAxis dataKey="name" type="category" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} width={80} />
-                    <Tooltip contentStyle={{ background: '#09090b', border: '1px solid #27272a', borderRadius: '8px', color: '#fff' }} />
-                    <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                      {expenseBreakdown.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+              <CardContent className="overflow-x-auto">
+                <table className="w-full text-left text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 font-medium text-xs">
+                      <th className="py-2.5 px-3">Vehicle</th>
+                      <th className="py-2.5 px-3">Gross Revenue</th>
+                      <th className="py-2.5 px-3">Operational Cost</th>
+                      <th className="py-2.5 px-3">Net Profit</th>
+                      <th className="py-2.5 px-3">ROI (%)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reports.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-xs text-zinc-400">No vehicle ROI records available. Log trips and operational costs to compute metrics.</td>
+                      </tr>
+                    ) : (
+                      reports.map((r) => (
+                        <tr key={r.vehicleId} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 text-xs text-zinc-800 dark:text-zinc-200">
+                          <td className="py-3 px-3 font-bold">{r.registrationNumber} ({r.modelName})</td>
+                          <td className="py-3 px-3">₹{r.totalRevenue.toLocaleString()}</td>
+                          <td className="py-3 px-3">₹{r.totalOperationalCost.toLocaleString()}</td>
+                          <td className="py-3 px-3">₹{r.netProfit.toLocaleString()}</td>
+                          <td className="py-3 px-3">
+                            <span className={'px-2 py-0.5 rounded text-[10px] font-bold ' + (r.roi >= 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500')}>
+                              {(r.roi * 100).toFixed(1)}%
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </CardContent>
-            </Card>
-
-            <Card className="p-4 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl space-y-4">
-              <h4 className="font-bold text-xs text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                <Fuel className="h-4 w-4 text-zinc-400" /> Fuel Surcharge Coverage
-              </h4>
-              <div className="p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl">
-                <span className="text-[10px] text-zinc-400 uppercase block leading-none">Net Fleet MPG</span>
-                <span className="text-lg font-black text-zinc-900 dark:text-zinc-55 block mt-1.5">10.4 MPG</span>
-              </div>
-              <p className="text-[10px] text-zinc-500 leading-relaxed">
-                Overall heavy vehicle and commercial van averages are within 4% of targeted fuel card limits.
-              </p>
             </Card>
           </div>
         )
+      }
+
+      case 'Fuel Optimization': {
+        const avgEfficiency = reports.length > 0 ? (reports.reduce((acc, r) => acc + r.fuelEfficiency, 0) / reports.length) : 0
+        const expenseTypes = {}
+        expenses.forEach(e => {
+          expenseTypes[e.type] = (expenseTypes[e.type] || 0) + e.amount
+        })
+        const dynamicExpenseBreakdown = Object.keys(expenseTypes).map((type, idx) => ({
+          name: type,
+          value: expenseTypes[type],
+          color: idx === 0 ? '#18181b' : idx === 1 ? '#3f3f46' : idx === 2 ? '#71717a' : '#a1a1aa'
+        }))
+
+        return (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="lg:col-span-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
+                <CardHeader>
+                  <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Category Expense Breakdown</CardTitle>
+                  <CardDescription className="text-xs text-zinc-500">Operating expense allocation by category</CardDescription>
+                </CardHeader>
+                <CardContent className="h-72">
+                  {dynamicExpenseBreakdown.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-xs text-zinc-400">No operating expenses recorded.</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={dynamicExpenseBreakdown} layout="vertical">
+                        <XAxis type="number" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                        <YAxis dataKey="name" type="category" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} width={80} />
+                        <Tooltip contentStyle={{ background: '#09090b', border: '1px solid #27272a', borderRadius: '8px', color: '#fff' }} />
+                        <Bar dataKey="value" name="Amount (₹)" radius={[0, 4, 4, 0]}>
+                          {dynamicExpenseBreakdown.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="p-4 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl space-y-4">
+                <h4 className="font-bold text-xs text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                  <Fuel className="h-4 w-4 text-zinc-400" /> Fuel Efficiency Summary
+                </h4>
+                <div className="p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+                  <span className="text-[10px] text-zinc-400 uppercase block leading-none">Net Fleet Efficiency</span>
+                  <span className="text-lg font-black text-zinc-900 dark:text-zinc-55 block mt-1.5">{avgEfficiency.toFixed(1)} km/L</span>
+                </div>
+                <p className="text-[10px] text-zinc-500 leading-relaxed">
+                  Overall heavy vehicle and commercial van averages are within 4% of targeted fuel card limits.
+                </p>
+              </Card>
+            </div>
+
+            <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
+              <CardHeader>
+                <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Vehicle Fuel Efficiency Logs</CardTitle>
+                <CardDescription className="text-xs text-zinc-500">Live operational fuel consumption efficiency metrics mapped per vehicle.</CardDescription>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                <table className="w-full text-left text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 font-medium text-xs">
+                      <th className="py-2.5 px-3">Vehicle</th>
+                      <th className="py-2.5 px-3">Fuel Efficiency</th>
+                      <th className="py-2.5 px-3">Total Operational Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reports.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="py-8 text-center text-xs text-zinc-400">No fuel efficiency records available. Log fuel logs and trips to view logs.</td>
+                      </tr>
+                    ) : (
+                      reports.map((r) => (
+                        <tr key={r.vehicleId} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 text-xs text-zinc-800 dark:text-zinc-200">
+                          <td className="py-3 px-3 font-bold">{r.registrationNumber} ({r.modelName})</td>
+                          <td className="py-3 px-3 font-mono text-[11px]">{r.fuelEfficiency.toFixed(1)} km/L</td>
+                          <td className="py-3 px-3">₹{r.totalOperationalCost.toLocaleString()}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+          </div>
+        )
+      }
 
       case 'Settings':
         return (

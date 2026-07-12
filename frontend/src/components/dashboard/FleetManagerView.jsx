@@ -41,7 +41,8 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
           rawCap: v.maxLoadCapacity,
           rawOdo: v.currentOdometer,
           cost: v.acquisitionCost,
-          status: v.status === 'OnTrip' ? 'On Trip' : v.status === 'InShop' ? 'In Shop' : v.status
+          status: v.status === 'OnTrip' ? 'On Trip' : v.status === 'InShop' ? 'In Shop' : v.status,
+          trips: v.trips || []
         }))
         setVehicles(mapped)
       }
@@ -731,6 +732,16 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                           <div>
                             <span className="text-zinc-400 block uppercase tracking-wider text-[8px] font-bold">Odometer</span>
                             <span className="font-semibold text-zinc-700 dark:text-zinc-300 text-xs">{v.odo}</span>
+                          </div>
+                          <div>
+                            <span className="text-zinc-400 block uppercase tracking-wider text-[8px] font-bold">Investment</span>
+                            <span className="font-semibold text-zinc-700 dark:text-zinc-300 text-xs">₹{(v.cost || 0).toLocaleString()}</span>
+                          </div>
+                          <div>
+                            <span className="text-zinc-400 block uppercase tracking-wider text-[8px] font-bold">Total Revenue</span>
+                            <span className="font-semibold text-emerald-600 dark:text-emerald-405 text-xs">
+                              ₹{(v.trips || []).filter(t => t.status === 'Completed').reduce((sum, t) => sum + t.revenue, 0).toLocaleString()}
+                            </span>
                           </div>
                         </div>
                       </div>

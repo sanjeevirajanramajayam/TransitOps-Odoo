@@ -580,12 +580,12 @@ export default function DispatcherView({ activeSubTab }) {
                     <tr>
                       <td colSpan={6} className="py-8 text-center text-xs text-zinc-400">Loading trips logged...</td>
                     </tr>
-                  ) : trips.filter(trip => trip.status !== 'Draft').length === 0 ? (
+                  ) : trips.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-xs text-zinc-400">No active or completed trips logged.</td>
+                      <td colSpan={6} className="py-8 text-center text-xs text-zinc-400">No trips logged.</td>
                     </tr>
                   ) : (
-                    trips.filter(trip => trip.status !== 'Draft').map((trip) => {
+                    trips.map((trip) => {
                       const veh = vehicles.find(v => v.id === trip.vehicleId)
                       const drv = drivers.find(d => d.id === trip.driverId)
                       return (
@@ -599,12 +599,42 @@ export default function DispatcherView({ activeSubTab }) {
                           <td className="py-3.5 px-4 font-medium">{drv ? drv.name : `ID: ${trip.driverId}`}</td>
                           <td className="py-3.5 px-4">{trip.cargoWeight.toLocaleString()} kg</td>
                           <td className="py-3.5 px-4">
-                            <span className={'px-2.5 py-0.5 text-[10px] font-semibold rounded-full border uppercase ' + (trip.status === 'Dispatched' ? 'bg-indigo-50/90 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800' : trip.status === 'Completed' ? 'bg-emerald-50/90 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' : trip.status === 'Cancelled' ? 'bg-red-50/90 dark:bg-red-950/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800' : 'bg-zinc-50 dark:bg-zinc-900/50 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700')}>
+                            <span className={'px-2.5 py-0.5 text-[10px] font-semibold rounded-full border uppercase ' + (trip.status === 'Dispatched' ? 'bg-indigo-50/90 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800' : trip.status === 'Completed' ? 'bg-emerald-50/90 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' : trip.status === 'Cancelled' ? 'bg-red-50/90 dark:bg-red-950/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800' : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700')}>
                               {trip.status}
                             </span>
                           </td>
                           <td className="py-3.5 px-4 text-right">
                             <div className="flex justify-end items-center gap-1.5">
+                              {trip.status === 'Draft' && (
+                                <>
+                                  <Button
+                                    onClick={() => handleDispatch(trip.id)}
+                                    size="sm"
+                                    className="h-7 px-2.5 text-[10px] bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 select-none flex items-center gap-1"
+                                  >
+                                    <Play className="h-3 w-3 text-emerald-500 fill-emerald-500" /> Dispatch
+                                  </Button>
+                                  <Button
+                                    onClick={() => handleEdit(trip)}
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent"
+                                    title="Edit Draft"
+                                  >
+                                    <Edit2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button
+                                    onClick={() => handleDelete(trip.id)}
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 bg-transparent"
+                                    title="Delete Draft"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </>
+                              )}
+
                               {trip.status === 'Dispatched' && (
                                 <>
                                   <Button
@@ -627,7 +657,7 @@ export default function DispatcherView({ activeSubTab }) {
                                 </>
                               )}
 
-                              {trip.status === 'Cancelled' && (
+                              {(trip.status === 'Cancelled' || trip.status === 'Completed') && (
                                 <Button
                                   onClick={() => handleDelete(trip.id)}
                                   size="icon"

@@ -43,6 +43,9 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
     const vehicles = await prisma.transitVehicle.findMany({
       where,
+      include: {
+        trips: true
+      },
       orderBy: { id: 'asc' }
     })
 
