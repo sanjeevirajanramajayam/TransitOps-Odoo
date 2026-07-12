@@ -1,189 +1,274 @@
 import { useState } from 'react'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
+import LoginPage from './components/auth/LoginPage'
+import FleetManagerView from './components/dashboard/FleetManagerView'
+import DriverView from './components/dashboard/DriverView'
+import SafetyOfficerView from './components/dashboard/SafetyOfficerView'
+import FinancialAnalystView from './components/dashboard/FinancialAnalystView'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Truck, Users, Route, Landmark, Settings, AlertTriangle, ShieldCheck, Sun, Moon } from 'lucide-react'
+import {
+  Truck, Users, Route, Landmark, Settings, AlertTriangle,
+  Sun, Moon, Search, LogOut, ChevronRight, BarChart3, Wrench
+} from 'lucide-react'
 
-function App() {
-  const [darkMode, setDarkMode] = useState(false);
+export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [userRole, setUserRole] = useState('')
+  const [activeTab, setActiveTab] = useState('Dashboard')
+  const [darkMode, setDarkMode] = useState(true)
+
+  const handleLogin = (role) => {
+    setUserRole(role)
+    setIsLoggedIn(true)
+  }
+
+  const handleLogout = () => {
+    setIsLoggedIn(false)
+    setUserRole('')
+    setActiveTab('Dashboard')
+  }
 
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle('dark');
-  };
+    setDarkMode(!darkMode)
+    document.documentElement.classList.toggle('dark')
+  }
 
-  const stats = [
-    {
-      title: "Active Vehicles",
-      value: "12 / 15",
-      description: "80% utilization rate",
-      icon: Truck,
-      color: "text-indigo-500 bg-indigo-500/10"
-    },
-    {
-      title: "Active Drivers",
-      value: "8 / 10",
-      description: "2 on break, 0 suspended",
-      icon: Users,
-      color: "text-emerald-500 bg-emerald-500/10"
-    },
-    {
-      title: "Dispatched Trips",
-      value: "4 Active",
-      description: "2 completed today",
-      icon: Route,
-      color: "text-sky-500 bg-sky-500/10"
-    },
-    {
-      title: "Total Revenue",
-      value: "$14,250",
-      description: "+12.5% from last week",
-      icon: Landmark,
-      color: "text-amber-500 bg-amber-500/10"
-    }
-  ];
+  const sidebarItems = [
+    { name: 'Dashboard', icon: BarChart3 },
+    { name: 'Fleet', icon: Truck },
+    { name: 'Drivers', icon: Users },
+    { name: 'Trips', icon: Route },
+    { name: 'Maintenance', icon: Wrench },
+    { name: 'Fuel & Expenses', icon: Landmark },
+    { name: 'Settings', icon: Settings }
+  ]
 
-  return (
-    <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 text-slate-900 dark:text-zinc-50 transition-colors duration-200">
-      <header className="border-b border-slate-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-500/10 rounded-lg text-purple-600 dark:text-purple-400">
-              <Route className="h-6 w-6" />
+  const generalStats = [
+    { title: 'Active Vehicles', value: '53', border: 'border-l-4 border-indigo-500' },
+    { title: 'Available Vehicles', value: '42', border: 'border-l-4 border-emerald-500' },
+    { title: 'Vehicles In Maintenance', value: '05', border: 'border-l-4 border-amber-500' },
+    { title: 'Active Trips', value: '18', border: 'border-l-4 border-sky-500' },
+    { title: 'Pending Trips', value: '09', border: 'border-l-4 border-blue-500' },
+    { title: 'Drivers On Duty', value: '26', border: 'border-l-4 border-emerald-500' },
+    { title: 'Fleet Utilization', value: '81%', border: 'border-l-4 border-emerald-500' }
+  ]
+
+  const recentTrips = [
+    { id: 'TR001', vehicle: 'VAN-05', driver: 'Alex', status: 'On Trip', eta: '45 min', color: 'bg-sky-500/10 text-sky-400 border-sky-500/20' },
+    { id: 'TR002', vehicle: 'TRK-12', driver: 'John', status: 'Completed', eta: '-', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+    { id: 'TR003', vehicle: 'MINI-08', driver: 'Priya', status: 'Dispatched', eta: '1h 10m', color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' },
+    { id: 'TR004', vehicle: '-', driver: '-', status: 'Draft', eta: 'Awaiting vehicle', color: 'bg-zinc-800 text-zinc-400 border-zinc-700' }
+  ]
+
+  const vehicleStatusChart = [
+    { name: 'Available', percent: 65, color: 'bg-emerald-500' },
+    { name: 'On Trip', percent: 25, color: 'bg-indigo-500' },
+    { name: 'In Shop', percent: 8, color: 'bg-amber-500' },
+    { name: 'Retired', percent: 2, color: 'bg-rose-500' }
+  ]
+
+  if (!isLoggedIn) {
+    return <LoginPage onLogin={handleLogin} />
+  }
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'Dashboard':
+        return (
+          <div className="space-y-6">
+            <div className="flex flex-wrap gap-4 items-center justify-between">
+              <div className="flex gap-3">
+                <select className="px-3 py-1.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg text-xs text-slate-700 dark:text-zinc-300 focus:outline-none">
+                  <option>Vehicle Type: All</option>
+                  <option>Van</option>
+                  <option>Truck</option>
+                  <option>Semi</option>
+                </select>
+                <select className="px-3 py-1.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg text-xs text-slate-700 dark:text-zinc-300 focus:outline-none">
+                  <option>Status: All</option>
+                  <option>Available</option>
+                  <option>On Trip</option>
+                  <option>In Shop</option>
+                </select>
+                <select className="px-3 py-1.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg text-xs text-slate-700 dark:text-zinc-300 focus:outline-none">
+                  <option>Region: All</option>
+                  <option>North</option>
+                  <option>South</option>
+                  <option>East</option>
+                  <option>West</option>
+                </select>
+              </div>
             </div>
-            <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              TransitOps
-            </span>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="icon" onClick={toggleDarkMode} className="rounded-lg">
-              {darkMode ? <Sun className="h-[1.2rem] w-[1.2rem]" /> : <Moon className="h-[1.2rem] w-[1.2rem]" />}
-            </Button>
-            <Button className="rounded-lg gap-2">
-              <Settings className="h-4 w-4" />
-              Manage Fleet
-            </Button>
-          </div>
-        </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-900 via-purple-900 to-zinc-900 p-8 md:p-12 text-white shadow-xl">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-          <div className="relative z-10 max-w-2xl space-y-4">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-300 border border-emerald-500/25">
-              <ShieldCheck className="h-3.5 w-3.5" /> Platform Active
-            </span>
-            <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">
-              Transit Operations Command
-            </h1>
-            <p className="text-indigo-200 text-lg">
-              Real-time fleet tracking, dynamic routing compliance checks, and automated driver dispatch logs.
-            </p>
-            <div className="flex flex-wrap gap-3 pt-2">
-              <Button className="bg-white text-indigo-950 hover:bg-slate-100 rounded-lg font-medium">
-                Dispatch New Trip
-              </Button>
-              <Button variant="outline" className="border-indigo-500/35 hover:bg-indigo-500/10 text-white rounded-lg">
-                View Maintenance Log
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat, i) => {
-            const IconComponent = stat.icon;
-            return (
-              <Card key={i} className="border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
-                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                  <span className="text-sm font-medium text-slate-500 dark:text-zinc-400">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+              {generalStats.map((stat, i) => (
+                <Card key={i} className={`bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 p-3 flex flex-col justify-between shadow-sm rounded-xl ${stat.border}`}>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider leading-none">
                     {stat.title}
                   </span>
-                  <div className={`p-2 rounded-lg ${stat.color}`}>
-                    <IconComponent className="h-4 w-4" />
-                  </div>
+                  <span className="text-2xl font-black tracking-tight text-slate-800 dark:text-zinc-100 block mt-2">
+                    {stat.value}
+                  </span>
+                </Card>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="lg:col-span-2 border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
+                <CardHeader>
+                  <CardTitle className="text-lg">Recent Operational Trips</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold tracking-tight">{stat.value}</div>
-                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">{stat.description}</p>
+                <CardContent className="overflow-x-auto">
+                  <table className="w-full text-left text-sm border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 dark:border-zinc-800 text-slate-400 font-medium">
+                        <th className="py-2.5 px-3">Trip</th>
+                        <th className="py-2.5 px-3">Vehicle</th>
+                        <th className="py-2.5 px-3">Driver</th>
+                        <th className="py-2.5 px-3">Status</th>
+                        <th className="py-2.5 px-3">ETA</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentTrips.map((trip) => (
+                        <tr key={trip.id} className="border-b border-slate-100 dark:border-zinc-800/50 hover:bg-slate-50/50 dark:hover:bg-zinc-900/50">
+                          <td className="py-3 px-3 font-semibold text-slate-800 dark:text-zinc-200">{trip.id}</td>
+                          <td className="py-3 px-3">{trip.vehicle}</td>
+                          <td className="py-3 px-3">{trip.driver}</td>
+                          <td className="py-3 px-3">
+                            <span className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${trip.color}`}>
+                              {trip.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-slate-500 dark:text-zinc-400 text-xs">{trip.eta}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </CardContent>
               </Card>
-            );
-          })}
-        </section>
 
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="md:col-span-2 border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
-            <CardHeader>
-              <CardTitle>System Status & Integrations</CardTitle>
-              <CardDescription>Verify UI components, tailwind classes, and CSS dark mode styles.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 border border-slate-100 dark:border-zinc-800 rounded-lg bg-slate-50/50 dark:bg-zinc-900/50 flex flex-wrap gap-2 items-center justify-between">
-                <div className="space-y-1">
-                  <h4 className="font-semibold text-sm">Shadcn Buttons Check</h4>
-                  <p className="text-xs text-slate-500 dark:text-zinc-400">Toggle different button variant states</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="default" size="sm">Primary</Button>
-                  <Button variant="secondary" size="sm">Secondary</Button>
-                  <Button variant="outline" size="sm">Outline</Button>
-                  <Button variant="destructive" size="sm">Destructive</Button>
-                  <Button variant="ghost" size="sm">Ghost</Button>
-                </div>
-              </div>
+              <Card className="border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
+                <CardHeader>
+                  <CardTitle className="text-lg">Vehicle Status Allocation</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {vehicleStatusChart.map((status, i) => (
+                    <div key={i} className="space-y-1">
+                      <div className="flex justify-between text-xs font-semibold">
+                        <span className="text-slate-600 dark:text-zinc-400">{status.name}</span>
+                        <span className="text-slate-800 dark:text-zinc-200">{status.percent}%</span>
+                      </div>
+                      <div className="w-full bg-slate-100 dark:bg-zinc-800 h-2.5 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${status.color}`}
+                          style={{ width: `${status.percent}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )
+      case 'Fleet':
+        return <FleetManagerView />
+      case 'Drivers':
+        return <SafetyOfficerView />
+      case 'Trips':
+        return <DriverView />
+      case 'Fuel & Expenses':
+        return <FinancialAnalystView />
+      default:
+        return (
+          <div className="p-8 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-xl space-y-3 bg-white dark:bg-zinc-900">
+            <h3 className="text-lg font-bold">Placeholder View: {activeTab}</h3>
+            <p className="text-slate-500 dark:text-zinc-400 text-sm max-w-xs mx-auto">This panel is currently configured as a placeholder. Select another section from the navigation sidebar.</p>
+          </div>
+        )
+    }
+  }
 
-              <div className="p-4 border border-slate-100 dark:border-zinc-800 rounded-lg bg-slate-50/50 dark:bg-zinc-900/50 flex flex-wrap gap-2 items-center justify-between">
-                <div className="space-y-1">
-                  <h4 className="font-semibold text-sm">Responsive Grid System</h4>
-                  <p className="text-xs text-slate-500 dark:text-zinc-400">Adaptive layouts matching viewport size</p>
-                </div>
-                <div className="flex gap-2">
-                  <span className="px-2.5 py-1 text-xs font-semibold rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50">
-                    Active
-                  </span>
-                  <span className="px-2.5 py-1 text-xs font-semibold rounded-md bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
-                    Maintenance
-                  </span>
-                  <span className="px-2.5 py-1 text-xs font-semibold rounded-md bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400 border border-red-200 dark:border-red-900/50">
-                    Suspended
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="border-t border-slate-100 dark:border-zinc-800 pt-4 flex justify-between text-xs text-slate-500 dark:text-zinc-400">
-              <span>Database Provider: PostgreSQL (Neon)</span>
-              <span>ORM Layer: Prisma Client v6</span>
-            </CardFooter>
-          </Card>
+  return (
+    <div className={`min-h-screen bg-slate-50 dark:bg-zinc-950 text-slate-800 dark:text-zinc-200 transition-colors duration-200 flex ${darkMode ? 'dark' : ''}`}>
+      <aside className="w-64 bg-slate-900 text-slate-300 border-r border-slate-800 flex flex-col justify-between shrink-0 hidden md:flex">
+        <div className="space-y-6 py-6">
+          <div className="px-6 flex items-center gap-3">
+            <div className="p-2 bg-purple-500/20 rounded-lg text-purple-400 border border-purple-500/30">
+              <Route className="h-5 w-5" />
+            </div>
+            <span className="font-extrabold text-lg tracking-tight text-white">TransitOps</span>
+          </div>
 
-          <Card className="border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
-            <CardHeader className="space-y-1.5">
-              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500">
-                <AlertTriangle className="h-5 w-5" />
-                <CardTitle className="text-lg">Compliance Checks</CardTitle>
-              </div>
-              <CardDescription>Critical warnings requiring immediate dispatch review.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-950/50 rounded-lg">
-                  <h5 className="font-semibold text-xs text-red-800 dark:text-red-400">License Expiry warning</h5>
-                  <p className="text-[11px] text-red-600 dark:text-red-400/80 mt-0.5">Driver John Doe's commercial license expired on 2026-07-10.</p>
-                </div>
-                <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-950/50 rounded-lg">
-                  <h5 className="font-semibold text-xs text-amber-800 dark:text-amber-400">Vehicle capacity breach</h5>
-                  <p className="text-[11px] text-amber-600 dark:text-amber-400/80 mt-0.5">Cargo weight (12,500 lbs) exceeds Max Load Capacity of vehicle #TX-8902.</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
+          <nav className="space-y-1 px-3">
+            {sidebarItems.map((item) => {
+              const Icon = item.icon
+              const isActive = activeTab === item.name
+              return (
+                <button
+                  key={item.name}
+                  onClick={() => setActiveTab(item.name)}
+                  className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-lg transition-colors group ${
+                    isActive ? 'bg-purple-600 text-white' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span>{item.name}</span>
+                  </div>
+                  {isActive && <ChevronRight className="h-3 w-3" />}
+                </button>
+              )
+            })}
+          </nav>
+        </div>
 
-      </main>
+        <div className="p-4 border-t border-slate-800 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center justify-center font-bold text-xs uppercase">
+              {userRole.substring(0, 2)}
+            </div>
+            <div className="space-y-0.5">
+              <span className="text-xs font-bold text-white block leading-none">{userRole}</span>
+              <span className="text-[10px] text-slate-500 block leading-none">Raven K.</span>
+            </div>
+          </div>
+          <Button
+            onClick={handleLogout}
+            variant="ghost"
+            className="w-full justify-start text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 h-9 rounded-lg gap-2"
+          >
+            <LogOut className="h-4 w-4" /> Sign Out
+          </Button>
+        </div>
+      </aside>
+
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="h-16 border-b border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-between px-6 sticky top-0 z-40">
+          <div className="flex items-center gap-3 w-64">
+            <Search className="h-4 w-4 text-slate-400 shrink-0" />
+            <input
+              type="text"
+              placeholder="Search assets, trips, or routes..."
+              className="bg-transparent border-none text-xs w-full focus:outline-none text-slate-800 dark:text-zinc-100 placeholder-slate-400"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+              Role: {userRole}
+            </span>
+            <Button variant="outline" size="icon" onClick={toggleDarkMode} className="h-9 w-9 rounded-lg border-slate-200 dark:border-zinc-800">
+              {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-6 md:p-8">
+          {renderContent()}
+        </main>
+      </div>
     </div>
-  );
+  )
 }
-
-export default App
