@@ -211,8 +211,8 @@ export default function FinancialAnalystView({ activeSubTab }) {
               </Card>
             )}
 
-            {/* Separate Blocks for Fuel and Expenses */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Stacked row layout (one block per row) for Fuel and Expenses */}
+            <div className="space-y-6">
               {/* Block 1: Fuel Logs */}
               <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
                 <CardHeader>
@@ -282,6 +282,38 @@ export default function FinancialAnalystView({ activeSubTab }) {
                   </table>
                 </CardContent>
               </Card>
+
+              {/* Block 3: Total Summary Card */}
+              {(() => {
+                const totalFuelCost = fuelLogs.reduce((acc, log) => acc + (parseFloat(log.cost.replace(/[^0-9.]/g, '')) || 0), 0);
+                const totalExpCost = expenses.reduce((acc, exp) => acc + (exp.amount || 0), 0);
+                const totalOpsCost = totalFuelCost + totalExpCost;
+
+                return (
+                  <Card className="border-zinc-250 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-950/40 rounded-xl p-5 border shadow-sm">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                      <div>
+                        <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Operational Cost Aggregation</h4>
+                        <p className="text-[10px] text-zinc-500">Calculated sum of active diesel purchases and operating ledger payouts.</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-4 text-xs font-semibold">
+                        <div className="px-3 py-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                          <span className="text-zinc-400 block text-[9px] uppercase font-bold">Total Fuel Cost</span>
+                          <span className="text-zinc-900 dark:text-zinc-100">₹{totalFuelCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="px-3 py-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                          <span className="text-zinc-400 block text-[9px] uppercase font-bold">Total Expenses</span>
+                          <span className="text-zinc-900 dark:text-zinc-100">₹{totalExpCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 border border-zinc-850">
+                          <span className="text-zinc-400 dark:text-zinc-500 block text-[9px] uppercase font-bold">Total Operational Cost</span>
+                          <span className="text-base font-black">₹{totalOpsCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })()}
             </div>
           </div>
         )
