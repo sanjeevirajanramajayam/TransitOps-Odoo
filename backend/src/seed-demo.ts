@@ -38,17 +38,18 @@ async function seed() {
       veh = await prisma.transitVehicle.create({ data: v })
       console.log(`[OK]   Created Vehicle: ${v.registrationNumber}`)
     } else {
-      console.log(`[SKIP] Vehicle ${v.registrationNumber} already exists`)
+      veh = await prisma.transitVehicle.update({ where: { id: veh.id }, data: v })
+      console.log(`[OK]   Updated Vehicle: ${v.registrationNumber}`)
     }
     vehicles.push(veh)
   }
 
   console.log('\n--- Seeding Drivers ---')
   const driversData = [
-    { name: 'Alex Rivera', licenseNumber: 'CDL-TX-8902', licenseCategory: 'Class A', licenseExpiryDate: new Date('2028-12-31T00:00:00.000Z'), contactNumber: '+1 (555) 123-4567', safetyScore: 98, status: DriverStatus.Available },
-    { name: 'Priya Patel', licenseNumber: 'CDL-CA-4412', licenseCategory: 'Class B', licenseExpiryDate: new Date('2029-06-30T00:00:00.000Z'), contactNumber: '+1 (555) 234-5678', safetyScore: 95, status: DriverStatus.Available },
-    { name: 'John Doe', licenseNumber: 'CDL-FL-7711', licenseCategory: 'Class A', licenseExpiryDate: new Date('2028-08-15T00:00:00.000Z'), contactNumber: '+1 (555) 345-6789', safetyScore: 89, status: DriverStatus.Available },
-    { name: 'Marcus Vance', licenseNumber: 'CDL-NY-1029', licenseCategory: 'Class B', licenseExpiryDate: new Date('2027-04-10T00:00:00.000Z'), contactNumber: '+1 (555) 456-7890', safetyScore: 92, status: DriverStatus.Available }
+    { name: 'Alex Rivera', licenseNumber: 'CDL-TX-8902', licenseCategory: 'Class A', licenseExpiryDate: new Date('2028-12-31T00:00:00.000Z'), contactNumber: '+1 (555) 123-4567', safetyScore: 98, status: DriverStatus.Available, email: 'fleet@transitops.com' },
+    { name: 'Priya Patel', licenseNumber: 'CDL-CA-4412', licenseCategory: 'Class B', licenseExpiryDate: new Date('2029-06-30T00:00:00.000Z'), contactNumber: '+1 (555) 234-5678', safetyScore: 95, status: DriverStatus.Available, email: 'finance@transitops.com' },
+    { name: 'John Doe', licenseNumber: 'CDL-FL-7711', licenseCategory: 'Class A', licenseExpiryDate: new Date('2028-08-15T00:00:00.000Z'), contactNumber: '+1 (555) 345-6789', safetyScore: 89, status: DriverStatus.Available, email: 'john.doe@transitops.com' },
+    { name: 'Marcus Vance', licenseNumber: 'CDL-NY-1029', licenseCategory: 'Class B', licenseExpiryDate: new Date('2026-07-27T00:00:00.000Z'), contactNumber: '+1 (555) 456-7890', safetyScore: 92, status: DriverStatus.Available, email: 'dispatch@transitops.com' }
   ]
 
   const drivers: any[] = []
@@ -58,7 +59,8 @@ async function seed() {
       drv = await prisma.transitDriver.create({ data: d })
       console.log(`[OK]   Created Driver: ${d.name}`)
     } else {
-      console.log(`[SKIP] Driver ${d.name} already exists`)
+      drv = await prisma.transitDriver.update({ where: { id: drv.id }, data: d })
+      console.log(`[OK]   Updated Driver: ${d.name}`)
     }
     drivers.push(drv)
   }

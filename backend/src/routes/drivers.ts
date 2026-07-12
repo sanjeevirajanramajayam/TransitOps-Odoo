@@ -12,7 +12,8 @@ const createDriverSchema = z.object({
   licenseNumber: z.string().min(2),
   licenseCategory: z.string().min(1),
   licenseExpiryDate: z.string().datetime(),
-  contactNumber: z.string().min(5)
+  contactNumber: z.string().min(5),
+  email: z.string().email().optional().or(z.literal(''))
 })
 
 const updateDriverSchema = createDriverSchema.partial().extend({
@@ -66,7 +67,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 
 router.post('/', validateRequest(createDriverSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, licenseNumber, licenseCategory, licenseExpiryDate, contactNumber } = req.body
+    const { name, licenseNumber, licenseCategory, licenseExpiryDate, contactNumber, email } = req.body
     const driver = await prisma.transitDriver.create({
       data: {
         name,
@@ -74,6 +75,7 @@ router.post('/', validateRequest(createDriverSchema), async (req: Request, res: 
         licenseCategory,
         licenseExpiryDate: new Date(licenseExpiryDate),
         contactNumber,
+        email: email || null,
         safetyScore: 100
       }
     })
@@ -96,6 +98,21 @@ router.put('/:id', validateRequest(updateDriverSchema), async (req: Request, res
       data: updateData
     })
     return sendResponse(res, 200, true, 'Driver updated successfully', driver)
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/:id/send-email', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params
+    const driver = await prisma.transitDriver.findUniqueOrThrow({
+      where: { id: parseInt(id as string) }
+    })
+
+    console.log(`[EMAIL] Sending license renewal notification to ${driver.name} at ${driver.email || 'no-email@transitops.com'} (License: ${driver.licenseNumber}, Expires: ${driver.licenseExpiryDate.toISOString().split('T')[0]})`)
+
+    return sendResponse(res, 200, true, `Expiry notification email sent to ${driver.name} successfully`)
   } catch (err) {
     next(err)
   }

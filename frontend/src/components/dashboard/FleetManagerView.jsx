@@ -49,6 +49,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
   }
   const [editingVehicleId, setEditingVehicleId] = useState(null)
   const [editingDriverId, setEditingDriverId] = useState(null)
+  const [sentEmails, setSentEmails] = useState([])
 
   // New vehicle & driver form states
   const [newVehicle, setNewVehicle] = useState({ reg: '', model: '', type: 'Van', cap: '', odo: '', cost: '', status: 'Available' })
@@ -425,6 +426,19 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
       }
     } catch (err) {
       console.error('Failed to fetch drivers', err)
+    }
+  }
+
+  const handleSendExpiryEmail = async (driverId) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/v1/drivers/${driverId}/send-email`, {
+        method: 'POST'
+      })
+      if (res.ok) {
+        setSentEmails(prev => [...prev, driverId])
+      }
+    } catch (err) {
+      console.error('Failed to send expiry email', err)
     }
   }
 
@@ -858,68 +872,105 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {driversList.map((driver) => (
-                <Card key={driver.id} className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl p-5 relative overflow-hidden group hover:border-zinc-400 dark:hover:border-zinc-700 transition-colors duration-200 flex flex-col justify-between h-52">
-                  {/* Hover Actions */}
-                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1 bg-white/90 dark:bg-zinc-900/90 p-1 rounded-lg backdrop-blur-sm shadow-sm border border-zinc-200/50 dark:border-zinc-800/50">
-                    <Button
-                      onClick={() => handleDriverEditClick(driver)}
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7 rounded-md text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent shrink-0"
-                    >
-                      <Edit2 className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      onClick={() => handleDriverDelete(driver.id)}
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7 rounded-md text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 bg-transparent shrink-0"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>                  <div className="flex gap-4">
-                    {/* Driver Profile Image */}
-                    <div className="h-16 w-16 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-800 shrink-0 bg-zinc-50 dark:bg-zinc-950">
-                      <img 
-                        src={driver.img} 
-                        alt={driver.name} 
-                        className="h-full w-full object-cover"
-                      />
+              {driversList.map((driver) => {
+                const expiryDate = new Date(driver.expiry)
+                const today = new Date()
+                const diffTime = expiryDate.getTime() - today.getTime()
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+                const expiringSoon = diffDays >= 0 && diffDays <= 30
+                const alreadyExpired = diffDays < 0
+
+                return (
+                  <Card key={driver.id} className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl p-5 relative overflow-hidden group hover:border-zinc-400 dark:hover:border-zinc-700 transition-colors duration-200 flex flex-col justify-between h-52">
+                    {/* Hover Actions */}
+                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1 bg-white/90 dark:bg-zinc-900/90 p-1 rounded-lg backdrop-blur-sm shadow-sm border border-zinc-200/50 dark:border-zinc-800/50">
+                      <Button
+                        onClick={() => handleDriverEditClick(driver)}
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 rounded-md text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent shrink-0"
+                      >
+                        <Edit2 className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        onClick={() => handleDriverDelete(driver.id)}
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 rounded-md text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 bg-transparent shrink-0"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
 
-                    {/* Driver Basic Details */}
-                    <div className="space-y-1 select-text">
-                      <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-200">{driver.name}</h4>
-                      <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider">Commercial Driver</p>
-                      
-                      <div className="pt-2.5 space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-medium text-zinc-500">License:</span>
-                          <span className="font-mono text-zinc-700 dark:text-zinc-300">{driver.license}</span>
+                    <div className="flex gap-4">
+                      {/* Driver Profile Image */}
+                      <div className="h-16 w-16 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-800 shrink-0 bg-zinc-50 dark:bg-zinc-950">
+                        <img 
+                          src={driver.img} 
+                          alt={driver.name} 
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+
+                      {/* Driver Basic Details */}
+                      <div className="space-y-1 select-text">
+                        <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-200">{driver.name}</h4>
+                        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider">Commercial Driver</p>
+                        
+                        <div className="pt-2 pt-2.5 space-y-1 text-xs text-zinc-650 dark:text-zinc-450">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-medium text-zinc-500">License:</span>
+                            <span className="font-mono text-zinc-700 dark:text-zinc-300">{driver.license} ({driver.category})</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-medium text-zinc-500">Expires:</span>
+                            <span className={`font-semibold ${expiringSoon || alreadyExpired ? 'text-red-500 font-bold' : 'text-zinc-750 dark:text-zinc-300'}`}>{driver.expiry}</span>
+                          </div>
+                          <div className="text-zinc-700 dark:text-zinc-300">{driver.contact}</div>
+                          <div className="text-zinc-500 dark:text-zinc-400 truncate w-40">{driver.email}</div>
                         </div>
-                        <div className="text-zinc-700 dark:text-zinc-300">{driver.contact}</div>
-                        <div className="text-zinc-500 dark:text-zinc-400 truncate w-40">{driver.email}</div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Footer Stats / Badges */}
-                  <div className="border-t border-zinc-100 dark:border-zinc-900 pt-3 flex justify-between items-center text-xs">
-                    <div className="flex gap-2">
-                      <span className={'px-2 py-0.5 text-[9px] font-bold rounded border ' + (driver.status === 'Available' ? 'bg-zinc-50 dark:bg-zinc-900/50 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800' : driver.status === 'On Trip' ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-800 dark:border-zinc-200' : 'bg-zinc-100 dark:bg-zinc-900/50 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800')}>
-                        {driver.status}
-                      </span>
-                      <span className="px-2 py-0.5 text-[9px] font-bold bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 rounded">
-                        Score: {driver.safetyScore}
-                      </span>
+                    {/* Footer Stats / Badges */}
+                    <div className="border-t border-zinc-100 dark:border-zinc-900 pt-3 flex justify-between items-center text-xs">
+                      <div className="flex gap-2">
+                        <span className={'px-2 py-0.5 text-[9px] font-bold rounded border ' + (driver.status === 'Available' ? 'bg-zinc-50 dark:bg-zinc-900/50 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800' : driver.status === 'On Trip' ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-800 dark:border-zinc-200' : 'bg-zinc-100 dark:bg-zinc-900/50 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800')}>
+                          {driver.status}
+                        </span>
+                        <span className="px-2 py-0.5 text-[9px] font-bold bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 rounded">
+                          Score: {driver.safetyScore}
+                        </span>
+                        {(expiringSoon || alreadyExpired) && (
+                          <span className={`px-2 py-0.5 text-[9px] font-bold rounded border uppercase ${alreadyExpired ? 'bg-red-50/90 dark:bg-red-950/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800' : 'bg-amber-50/90 dark:bg-amber-950/20 text-amber-700 dark:text-amber-450 border-amber-200 dark:border-amber-800 animate-pulse'}`}>
+                            {alreadyExpired ? 'Expired' : 'Expiring Soon'}
+                          </span>
+                        )}
+                      </div>
+
+                      {expiringSoon || alreadyExpired ? (
+                        sentEmails.includes(driver.id) ? (
+                          <span className="text-[9px] text-emerald-500 font-bold flex items-center gap-0.5 select-none font-sans">
+                            <CheckCircle className="h-3.5 w-3.5" /> Mail Sent
+                          </span>
+                        ) : (
+                          <Button
+                            onClick={() => handleSendExpiryEmail(driver.id)}
+                            size="xs"
+                            className="h-5 px-2 text-[9px] bg-red-600 dark:bg-red-700 text-white font-bold rounded hover:bg-red-700 dark:hover:bg-red-800 select-none shrink-0 border-0 flex items-center gap-1"
+                          >
+                            Send Mail
+                          </Button>
+                        )
+                      ) : (
+                        <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
+                          v: {driver.vehicle}
+                        </span>
+                      )}
                     </div>
-                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
-                      v: {driver.vehicle}
-                    </span>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                )
+              })}
             </div>
           </div>
         )
