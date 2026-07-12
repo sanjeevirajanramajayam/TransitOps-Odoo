@@ -17,6 +17,13 @@ export default function FleetManagerView({ activeSubTab }) {
     { id: 5, reg: 'IL-5050', model: 'Isuzu NPR', type: 'Box Truck', cap: '10,000 lbs', odo: '95,300 mi', status: 'Retired' }
   ])
 
+  const [driversList] = useState([
+    { id: 1, name: 'Alex Rivera', license: 'CDL-A-9012', expiry: '2027-12-31', contact: '+1 (555) 123-4567', safetyScore: 98, status: 'Available', vehicle: 'TX-8902', img: '/driver1.png', email: 'alex.r@transitops.com' },
+    { id: 2, name: 'Priya Patel', license: 'CDL-A-7019', expiry: '2028-04-15', contact: '+1 (555) 987-6543', safetyScore: 95, status: 'On Trip', vehicle: 'CA-4412', img: '/driver2.png', email: 'priya.p@transitops.com' },
+    { id: 3, name: 'Marcus Vance', license: 'CDL-B-2211', expiry: '2027-09-20', contact: '+1 (555) 234-5678', safetyScore: 82, status: 'Suspended', vehicle: 'None', img: '/driver3.png', email: 'marcus.v@transitops.com' },
+    { id: 4, name: 'Sarah Connor', license: 'CDL-A-3388', expiry: '2026-08-01', contact: '+1 (555) 345-6789', safetyScore: 91, status: 'Available', vehicle: 'FL-7711', img: '/driver2.png', email: 'sarah.c@transitops.com' }
+  ])
+
   const [vehicleSearch, setVehicleSearch] = useState('')
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState('All')
   const [vehicleStatusFilter, setVehicleStatusFilter] = useState('All')
@@ -244,11 +251,11 @@ export default function FleetManagerView({ activeSubTab }) {
                   <Card key={v.id} className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl overflow-hidden flex flex-col justify-between group hover:border-zinc-400 dark:hover:border-zinc-700 transition-colors duration-200">
                     <div>
                       {/* Vehicle Image */}
-                      <div className="h-40 w-full overflow-hidden bg-zinc-50 dark:bg-zinc-950/60 relative border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-center p-4">
+                      <div className="h-40 w-full overflow-hidden bg-zinc-50 dark:bg-zinc-955 relative border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-center">
                         <img 
                           src={imgUrl} 
                           alt={v.model} 
-                          className="h-full w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+                          className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                         <span className={`absolute top-3 right-3 px-2.5 py-0.5 text-[9px] font-bold uppercase rounded-full border ${
                           v.status === 'Available' ? 'bg-zinc-50/90 dark:bg-zinc-900/95 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-850' :
@@ -296,6 +303,77 @@ export default function FleetManagerView({ activeSubTab }) {
                   </Card>
                 )
               })}
+            </div>
+          </div>
+        )
+
+      case 'Drivers':
+        return (
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
+              <div className="relative w-full md:w-80">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
+                <input
+                  type="text"
+                  placeholder="Search drivers by name or license..."
+                  className="pl-9 pr-4 py-2 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                />
+              </div>
+
+              <Button size="sm" className="h-8 text-sm font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 gap-1.5 border border-zinc-200 dark:border-zinc-800 select-none">
+                <Plus className="h-4 w-4" /> Add Driver
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {driversList.map((driver) => (
+                <Card key={driver.id} className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl p-5 relative overflow-hidden group hover:border-zinc-400 dark:hover:border-zinc-700 transition-colors duration-200 flex flex-col justify-between h-52">
+                  <div className="flex gap-4">
+                    {/* Driver Profile Image */}
+                    <div className="h-16 w-16 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-800 shrink-0 bg-zinc-50 dark:bg-zinc-950">
+                      <img 
+                        src={driver.img} 
+                        alt={driver.name} 
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+
+                    {/* Driver Basic Details */}
+                    <div className="space-y-1 select-text">
+                      <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-200">{driver.name}</h4>
+                      <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider">Commercial Driver</p>
+                      
+                      <div className="pt-2.5 space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-medium text-zinc-500">License:</span>
+                          <span className="font-mono text-zinc-700 dark:text-zinc-300">{driver.license}</span>
+                        </div>
+                        <div className="text-zinc-700 dark:text-zinc-300">{driver.contact}</div>
+                        <div className="text-zinc-500 dark:text-zinc-400 truncate w-40">{driver.email}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer Stats / Badges */}
+                  <div className="border-t border-zinc-100 dark:border-zinc-900 pt-3 flex justify-between items-center text-xs">
+                    <div className="flex gap-2">
+                      <span className={`px-2 py-0.5 text-[9px] font-bold rounded border ${
+                        driver.status === 'Available' ? 'bg-zinc-50 dark:bg-zinc-900/50 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800' :
+                        driver.status === 'On Trip' ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-800 dark:border-zinc-200' :
+                        'bg-zinc-100 dark:bg-zinc-900/50 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800'
+                      }`}>
+                        {driver.status}
+                      </span>
+                      <span className="px-2 py-0.5 text-[9px] font-bold bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 rounded">
+                        Score: {driver.safetyScore}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
+                      v: {driver.vehicle}
+                    </span>
+                  </div>
+                </Card>
+              ))}
             </div>
           </div>
         )
