@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, BarChart, Bar, Cell } from 'recharts'
 import {
   DollarSign, ArrowUpRight, TrendingUp, Download, Landmark, Fuel,
-  ChevronDown, IndianRupee, Plus, FileText, Calendar, Info, X, Edit2
+  ChevronDown, IndianRupee, Plus, FileText, Calendar, Info, X, Edit2, Trash2
 } from 'lucide-react'
 
 export default function FinancialAnalystView({ activeSubTab }) {
@@ -139,6 +139,14 @@ export default function FinancialAnalystView({ activeSubTab }) {
     setIsExpenseFormOpen(true)
   }
 
+  const handleDeleteFuel = (id) => {
+    setFuelLogs(prev => prev.filter(log => log.id !== id))
+  }
+
+  const handleDeleteExpense = (id) => {
+    setExpenses(prev => prev.filter(exp => exp.id !== id))
+  }
+
   const clearFuelForm = () => {
     setFuelReg('')
     setFuelDate('')
@@ -160,19 +168,19 @@ export default function FinancialAnalystView({ activeSubTab }) {
       case 'Fuel and Expenses':
         return (
           <div className="space-y-6 relative">
-            {/* Scrolled / High Z-Index top right action buttons */}
-            <div className="fixed top-[72px] right-8 z-50 flex gap-2.5 bg-white/70 dark:bg-zinc-950/70 backdrop-blur border border-zinc-200 dark:border-zinc-800 p-2 rounded-xl shadow-lg">
+            {/* Scrolled / High Z-Index top right action buttons (white in light theme, black in dark theme) */}
+            <div className="fixed top-[72px] right-8 z-50 flex gap-2.5 bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 p-2 rounded-xl shadow-lg">
               <Button
                 onClick={() => { setEditingFuelId(null); clearFuelForm(); setIsExpenseFormOpen(false); setIsFuelFormOpen(true); }}
                 size="sm"
-                className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-955 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 select-none"
+                className="h-8 text-xs font-semibold rounded-lg bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 select-none"
               >
                 <Fuel className="h-3.5 w-3.5 mr-1" /> Log Fuel
               </Button>
               <Button
                 onClick={() => { setEditingExpenseId(null); clearExpenseForm(); setIsFuelFormOpen(false); setIsExpenseFormOpen(true); }}
                 size="sm"
-                className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-955 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 select-none"
+                className="h-8 text-xs font-semibold rounded-lg bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 select-none"
               >
                 <Plus className="h-3.5 w-3.5 mr-1" /> Log Expense
               </Button>
@@ -217,7 +225,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                     </div>
                     <div className="flex justify-end gap-2 pt-2">
                       <Button type="button" variant="outline" onClick={() => { setIsFuelFormOpen(false); setEditingFuelId(null); }} className="h-8 text-xs bg-transparent border-zinc-200 dark:border-zinc-800">Cancel</Button>
-                      <Button type="submit" size="sm" className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950">
+                      <Button type="submit" size="sm" className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-955">
                         {editingFuelId ? 'Save Changes' : 'Add Fuel Log'}
                       </Button>
                     </div>
@@ -273,7 +281,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                     </div>
                     <div className="flex justify-end gap-2 pt-2">
                       <Button type="button" variant="outline" onClick={() => { setIsExpenseFormOpen(false); setEditingExpenseId(null); }} className="h-8 text-xs bg-transparent border-zinc-200 dark:border-zinc-800">Cancel</Button>
-                      <Button type="submit" size="sm" className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950">
+                      <Button type="submit" size="sm" className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-955">
                         {editingExpenseId ? 'Save Changes' : 'Add Expense Log'}
                       </Button>
                     </div>
@@ -311,14 +319,24 @@ export default function FinancialAnalystView({ activeSubTab }) {
                           <td className="py-3 px-3 font-black text-zinc-900 dark:text-zinc-100">{log.cost}</td>
                           <td className="py-3 px-3 font-mono text-[11px] text-zinc-500">{log.mpg}</td>
                           <td className="py-3 px-3 text-right">
-                            <Button
-                              onClick={() => handleEditFuelClick(log)}
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent"
-                            >
-                              <Edit2 className="h-3.5 w-3.5" />
-                            </Button>
+                            <div className="flex justify-end gap-1.5">
+                              <Button
+                                onClick={() => handleEditFuelClick(log)}
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent"
+                              >
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                onClick={() => handleDeleteFuel(log.id)}
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 bg-transparent"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -360,14 +378,24 @@ export default function FinancialAnalystView({ activeSubTab }) {
                           <td className="py-3 px-3 font-black text-zinc-900 dark:text-zinc-100">₹{e.amount.toLocaleString()}</td>
                           <td className="py-3 px-3 text-zinc-400">{e.date}</td>
                           <td className="py-3 px-3 text-right">
-                            <Button
-                              onClick={() => handleEditExpenseClick(e)}
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent"
-                            >
-                              <Edit2 className="h-3.5 w-3.5" />
-                            </Button>
+                            <div className="flex justify-end gap-1.5">
+                              <Button
+                                onClick={() => handleEditExpenseClick(e)}
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent"
+                              >
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                onClick={() => handleDeleteExpense(e.id)}
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 bg-transparent"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))}
