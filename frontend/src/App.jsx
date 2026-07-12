@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { saveSession, getSession, clearSession } from '@/lib/api'
 import LoginPage from './components/auth/LoginPage'
 import FleetManagerView from './components/dashboard/FleetManagerView'
 import DispatcherView from './components/dashboard/DispatcherView'
@@ -14,7 +15,7 @@ import {
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [userRole, setUserRole] = useState('')
+  const [user, setUser] = useState(null)
   const [activeTab, setActiveTab] = useState('Overview')
   const [darkMode, setDarkMode] = useState(true)
 
@@ -26,6 +27,17 @@ export default function App() {
       document.documentElement.classList.remove('dark')
     }
   }, [darkMode])
+
+  // Rehydrate session from localStorage on mount
+  useEffect(() => {
+    const session = getSession()
+    if (session?.token && session?.user) {
+      setUser(session.user)
+      setIsLoggedIn(true)
+      const items = getSidebarItems(session.user.role)
+      if (items.length > 0) setActiveTab(items[0].name)
+    }
+  }, [])
 
   const getSidebarItems = (role) => {
     switch (role) {
@@ -65,24 +77,28 @@ export default function App() {
     }
   }
 
-  const handleLogin = (role) => {
-    setUserRole(role)
+  const handleLogin = (loginUser, token) => {
+    saveSession(token, loginUser)
+    setUser(loginUser)
     setIsLoggedIn(true)
-    const items = getSidebarItems(role)
+    const items = getSidebarItems(loginUser.role)
     if (items.length > 0) {
       setActiveTab(items[0].name)
     }
   }
 
   const handleLogout = () => {
+    clearSession()
     setIsLoggedIn(false)
-    setUserRole('')
+    setUser(null)
     setActiveTab('Overview')
   }
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode)
   }
+
+  const userRole = user?.role ?? ''
 
   if (!isLoggedIn) {
     return <LoginPage onLogin={handleLogin} />
@@ -133,9 +149,9 @@ export default function App() {
 
           {/* User profile & light/dark mode control */}
           <div className="flex items-center gap-4">
-            <span className="px-2.5 py-0.5 text-[9px] font-bold uppercase rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 tracking-wider">
-              {userRole}
-            </span>
+              <span className="px-2.5 py-0.5 text-[9px] font-bold uppercase rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 tracking-wider">
+                {userRole}
+              </span>
             
             {/* Theme Changer - Rounded Full */}
             <Button variant="outline" size="icon" onClick={toggleDarkMode} className="h-8 w-8 rounded-full border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 bg-transparent text-zinc-900 dark:text-zinc-100 shrink-0">
@@ -143,15 +159,15 @@ export default function App() {
             </Button>
 
             {/* Dummy profile */}
-            <div className="flex items-center gap-2.5 pl-2 border-l border-zinc-200 dark:border-zinc-800">
-              <div className="h-8 w-8 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 flex items-center justify-center font-bold text-sm select-none shrink-0">
-                {userRole ? userRole.split(' ').map(n => n[0]).join('') : 'U'}
+              <div className="flex items-center gap-2.5 pl-2 border-l border-zinc-200 dark:border-zinc-800">
+                <div className="h-8 w-8 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 flex items-center justify-center font-bold text-sm select-none shrink-0">
+                  {user?.name ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2) : 'U'}
+                </div>
+                <div className="hidden lg:block text-left leading-none space-y-0.5">
+                  <span className="text-xs font-bold text-zinc-900 dark:text-zinc-200 block">{user?.name ?? 'User'}</span>
+                  <span className="text-[9px] text-zinc-400 block uppercase">Online</span>
+                </div>
               </div>
-              <div className="hidden lg:block text-left leading-none space-y-0.5">
-                <span className="text-xs font-bold text-zinc-900 dark:text-zinc-200 block">Raven K.</span>
-                <span className="text-[9px] text-zinc-400 block uppercase">Online</span>
-              </div>
-            </div>
           </div>
         </div>
       </header>
