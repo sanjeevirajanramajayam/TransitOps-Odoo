@@ -85,6 +85,7 @@ model TransitTrip {
   cargoWeight            Float          @map("cargo_weight")
   plannedDistance        Float          @map("planned_distance")
   actualDistanceTraveled Float?         @map("actual_distance_traveled")
+  fuelConsumed           Float?         @map("fuel_consumed")
   revenue                Float
   status                 TripStatus     @default(Draft)
   createdAt              DateTime       @default(now()) @map("created_at")
@@ -116,7 +117,7 @@ model TransitMaintenanceLog {
 model TransitFuelLog {
   id              Int            @id @default(autoincrement())
   vehicleId       Int            @map("vehicle_id")
-  fuelAmount      Float          @map("fuel_amount")
+  liters          Float
   cost            Float
   odometerReading Float          @map("odometer_reading")
   date            DateTime       @default(now())
