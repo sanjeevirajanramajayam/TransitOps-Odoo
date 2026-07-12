@@ -66,6 +66,7 @@ model TransitDriver {
   safetyScore       Float        @map("safety_score")
   status            DriverStatus @default(Available)
   trips             TransitTrip[]
+  alerts            TransitAlert[]
 
   @@map("transit_driver")
 }
@@ -176,4 +177,27 @@ model TransitDocument {
 
   @@map("transit_document")
   @@index([entityType, entityId])
+}
+
+enum AlertSeverity {
+  low
+  medium
+  high
+}
+
+model TransitAlert {
+  id          Int           @id @default(autoincrement())
+  driverId    Int?          @map("driver_id")
+  driverName  String?       @map("driver_name")
+  type        String
+  description String
+  severity    AlertSeverity @default(medium)
+  isDismissed Boolean       @default(false) @map("is_dismissed")
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  driver      TransitDriver? @relation(fields: [driverId], references: [id])
+
+  @@map("transit_alert")
+  @@index([driverId])
+  @@index([isDismissed])
 }
