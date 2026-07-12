@@ -1,18 +1,16 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ArrowRight, AlertTriangle, Loader2, Shield, Truck, Users, DollarSign } from 'lucide-react'
 
 const DEMO_CREDENTIALS = {
   'Fleet Manager':     { email: 'fleet@transitops.com',    password: 'demo1234' },
-  'Safety Officer':    { email: 'safety@transitops.com',   password: 'demo1234' },
   'Financial Analyst': { email: 'finance@transitops.com',  password: 'demo1234' },
   'Dispatcher':        { email: 'dispatch@transitops.com', password: 'demo1234' },
 }
 
 const ROLES = [
   { name: 'Fleet Manager',     desc: 'Vehicle & driver operations', icon: Truck },
-  { name: 'Safety Officer',    desc: 'Compliance & incident logs',  icon: Shield },
   { name: 'Financial Analyst', desc: 'Expenses, fuel & ROI',        icon: DollarSign },
   { name: 'Dispatcher',        desc: 'Live fleet & trip dispatch',  icon: Users },
 ]
