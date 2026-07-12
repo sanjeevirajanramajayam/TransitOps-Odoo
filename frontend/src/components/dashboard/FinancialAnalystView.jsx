@@ -657,7 +657,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                 const totalOpsCost = totalFuelCost + totalExpCost;
 
                 return (
-                  <Card className="border-zinc-250 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-955/40 rounded-xl p-5 border shadow-sm">
+                  <Card className="border-zinc-250 dark:border-zinc-850 bg-zinc-50 dark:bg-black rounded-xl p-5 border shadow-sm">
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                       <div>
                         <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Operational Cost Aggregation</h4>
@@ -672,9 +672,9 @@ export default function FinancialAnalystView({ activeSubTab }) {
                           <span className="text-zinc-400 block text-[9px] uppercase font-bold">Total Expenses</span>
                           <span className="text-zinc-900 dark:text-zinc-100">₹{totalExpCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </div>
-                        <div className="px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-955 border border-zinc-200 dark:border-zinc-800">
-                          <span className="text-zinc-400 dark:text-zinc-500 block text-[9px] uppercase font-bold">Total Operational Cost</span>
-                          <span className="text-xs font-bold">₹{totalOpsCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                        <div className="px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black border border-zinc-200 dark:border-zinc-800">
+                          <span className="text-zinc-450 dark:text-zinc-500 block text-[9px] uppercase font-bold">Total Operational Cost</span>
+                          <span className="text-xs font-bold text-white dark:text-black">₹{totalOpsCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </div>
                       </div>
                     </div>
