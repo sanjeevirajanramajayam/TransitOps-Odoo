@@ -63,26 +63,6 @@ app.use('/api/v1/documents', documentsRouter);
 app.use('/api/v1/alerts', alertsRouter);
 app.use('/api/v1/audit-logs', auditRouter);
 
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error('Unhandled Error:', err);
-
-  let statusCode = 500;
-  let message = 'An internal server error occurred';
-
-  if (err.code === 'P2002') {
-    statusCode = 409;
-    const targets = err.meta?.target ? ` (${err.meta.target.join(', ')})` : '';
-    message = `Unique constraint violation${targets}. A record with this value already exists.`;
-  } else if (err.code && err.code.startsWith('P')) {
-    statusCode = 400;
-    message = `Database operation failed: ${err.message || 'Prisma error'}`;
-  } else if (err.status) {
-    statusCode = err.status;
-    message = err.message;
-  }
-
-  return sendResponse(res, statusCode, false, message);
-});
 // A route designed to trigger a test error for logging verification
 app.get('/api/error-test', (req: Request, res: Response, next: NextFunction) => {
   const testError = new Error('Test Error: verification of the global error logger');
@@ -93,7 +73,7 @@ app.get('/api/error-test', (req: Request, res: Response, next: NextFunction) => 
 // Global Error Handler Middleware
 app.use(errorHandler);
 
-export { app };
+export { app, sendResponse };
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
