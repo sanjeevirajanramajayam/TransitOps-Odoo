@@ -1198,41 +1198,43 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
             <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Fleet Operations Settings</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* General Settings Card */}
               <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl p-5 space-y-4">
-                <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">System Threshold Configs</CardTitle>
+                <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">General Settings</CardTitle>
                 
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-500 block">Speed Alert Boundary (mph)</label>
+                    <label className="text-xs font-semibold text-zinc-500 block">Depot Name</label>
                     <div className="relative">
-                      <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
-                        <option>70 mph</option>
-                        <option>75 mph (Recommended)</option>
-                        <option>80 mph</option>
+                      <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
+                        <option>Mumbai Central Depot (HQ)</option>
+                        <option>Delhi Okhla Terminal</option>
+                        <option>Bengaluru Whitefield Yard</option>
+                        <option>Chennai Port Hub</option>
                       </select>
                       <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-500 block">Idle Time Trigger Warning</label>
+                    <label className="text-xs font-semibold text-zinc-500 block">Currency Type</label>
                     <div className="relative">
-                      <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
-                        <option>10 minutes</option>
-                        <option>15 minutes</option>
-                        <option>20 minutes</option>
+                      <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
+                        <option>INR (₹) - Indian Rupee</option>
+                        <option>USD ($) - US Dollar</option>
+                        <option>EUR (€) - Euro</option>
+                        <option>GBP (£) - British Pound</option>
                       </select>
                       <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-500 block">OBD Telemetry Ping Rate</label>
+                    <label className="text-xs font-semibold text-zinc-500 block">Distance Unit</label>
                     <div className="relative">
-                      <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
-                        <option>Every 5 seconds</option>
-                        <option>Every 10 seconds</option>
-                        <option>Every 30 seconds</option>
+                      <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
+                        <option>Kilometers (km)</option>
+                        <option>Miles (mi)</option>
                       </select>
                       <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
                     </div>
@@ -1240,33 +1242,50 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                 </div>
               </Card>
 
+              {/* Role-Based Access Control (RBAC) Card */}
               <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl p-5 space-y-4">
-                <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Notification Delivery Settings</CardTitle>
+                <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Role-Based Access Control (RBAC)</CardTitle>
                 
-                <div className="space-y-3.5 pt-2">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5 text-sm">
-                      <span className="font-bold text-zinc-800 dark:text-zinc-200 block text-xs">SMS Alerts (Urgent Only)</span>
-                      <span className="text-[10px] text-zinc-500 block">Sends text triggers for safety violations.</span>
-                    </div>
-                    <input type="checkbox" defaultChecked className="accent-zinc-900 dark:accent-zinc-100 h-4 w-4" />
-                  </div>
-
-                  <div className="flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800/80 pt-3">
-                    <div className="space-y-0.5 text-sm">
-                      <span className="font-bold text-zinc-800 dark:text-zinc-200 block text-xs">Daily Dispatch PDF Summaries</span>
-                      <span className="text-[10px] text-zinc-500 block">Emailed automatically at 18:00 UTC.</span>
-                    </div>
-                    <input type="checkbox" defaultChecked className="accent-zinc-900 dark:accent-zinc-100 h-4 w-4" />
-                  </div>
-
-                  <div className="flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800/80 pt-3">
-                    <div className="space-y-0.5 text-sm">
-                      <span className="font-bold text-zinc-800 dark:text-zinc-200 block text-xs">OBD Diagnostic DTC Pings</span>
-                      <span className="text-[10px] text-zinc-500 block">Webhooks trigger to integrations API.</span>
-                    </div>
-                    <input type="checkbox" className="accent-zinc-900 dark:accent-zinc-100 h-4 w-4" />
-                  </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 font-medium">
+                        <th className="py-2 pb-3">Role</th>
+                        <th className="py-2 pb-3">Scope</th>
+                        <th className="py-2 pb-3">Permitted Tabs</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
+                      <tr>
+                        <td className="py-2.5 font-bold text-zinc-800 dark:text-zinc-200">Fleet Manager</td>
+                        <td className="py-2.5">
+                          <span className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-[10px] font-semibold text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">Full</span>
+                        </td>
+                        <td className="py-2.5 text-zinc-500">Fleet, Maintenance, Drivers, Settings</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2.5 font-bold text-zinc-800 dark:text-zinc-200">Dispatcher</td>
+                        <td className="py-2.5">
+                          <span className="px-1.5 py-0.5 rounded bg-indigo-500/10 text-[10px] font-semibold text-indigo-500">Operational</span>
+                        </td>
+                        <td className="py-2.5 text-zinc-500">Active Trips Dispatch & Complete Log</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2.5 font-bold text-zinc-800 dark:text-zinc-200">Financial Analyst</td>
+                        <td className="py-2.5">
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-[10px] font-semibold text-emerald-500">Financial</span>
+                        </td>
+                        <td className="py-2.5 text-zinc-500">Fuel Logs, Expense Ledgers, ROI, Fuel Analytics</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2.5 font-bold text-zinc-800 dark:text-zinc-200">Safety Officer</td>
+                        <td className="py-2.5">
+                          <span className="px-1.5 py-0.5 rounded bg-rose-500/10 text-[10px] font-semibold text-rose-500">Compliance</span>
+                        </td>
+                        <td className="py-2.5 text-zinc-500">Active Safety Alerts, Driver Compliance Warnings</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </Card>
             </div>
