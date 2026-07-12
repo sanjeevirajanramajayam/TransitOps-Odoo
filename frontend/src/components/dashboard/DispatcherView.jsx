@@ -598,10 +598,27 @@ export default function DispatcherView({ activeSubTab }) {
                           <td className="py-3.5 px-4">{veh ? veh.reg : `ID: ${trip.vehicleId}`}</td>
                           <td className="py-3.5 px-4 font-medium">{drv ? drv.name : `ID: ${trip.driverId}`}</td>
                           <td className="py-3.5 px-4">{trip.cargoWeight.toLocaleString()} kg</td>
-                          <td className="py-3.5 px-4">
-                            <span className={'px-2.5 py-0.5 text-[10px] font-semibold rounded-full border uppercase ' + (trip.status === 'Dispatched' ? 'bg-indigo-50/90 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800' : trip.status === 'Completed' ? 'bg-emerald-50/90 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' : trip.status === 'Cancelled' ? 'bg-red-50/90 dark:bg-red-950/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800' : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700')}>
-                              {trip.status}
-                            </span>
+                          <td className="py-3.5 px-4 min-w-[200px]">
+                            <div className="flex flex-col space-y-1.5">
+                              <div className="flex justify-between text-[9px] uppercase font-bold text-zinc-400 dark:text-zinc-500 select-none">
+                                <span className={trip.status === 'Draft' ? 'text-zinc-900 dark:text-zinc-100 font-extrabold' : ''}>Draft</span>
+                                <span className={trip.status === 'Dispatched' ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : ''}>Dispatched</span>
+                                <span className={trip.status === 'Completed' ? 'text-emerald-600 dark:text-emerald-400 font-extrabold' : ''}>Completed</span>
+                              </div>
+                              <div className="relative w-full h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                <div 
+                                  className={'absolute top-0 left-0 h-full transition-all duration-500 ' + (trip.status === 'Cancelled' ? 'bg-rose-500' : 'bg-zinc-900 dark:bg-zinc-100')}
+                                  style={{
+                                    width: trip.status === 'Draft' ? '15%' : trip.status === 'Dispatched' ? '55%' : trip.status === 'Completed' ? '100%' : '100%'
+                                  }}
+                                />
+                              </div>
+                              <div className="flex justify-between items-center text-[10px]">
+                                <span className={'font-bold uppercase ' + (trip.status === 'Cancelled' ? 'text-rose-500' : trip.status === 'Dispatched' ? 'text-indigo-600 dark:text-indigo-400' : trip.status === 'Completed' ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500 dark:text-zinc-400')}>
+                                  {trip.status}
+                                </span>
+                              </div>
+                            </div>
                           </td>
                           <td className="py-3.5 px-4 text-right">
                             <div className="flex justify-end items-center gap-1.5">
@@ -610,15 +627,15 @@ export default function DispatcherView({ activeSubTab }) {
                                   <Button
                                     onClick={() => handleDispatch(trip.id)}
                                     size="sm"
-                                    className="h-7 px-2.5 text-[10px] bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 select-none flex items-center gap-1"
+                                    className="h-7 px-2.5 text-[10px] bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 select-none flex items-center gap-1 font-semibold rounded-lg"
                                   >
-                                    <Play className="h-3 w-3 text-emerald-500 fill-emerald-500" /> Dispatch
+                                    <Play className="h-3 w-3 text-emerald-500 fill-emerald-500" /> Push status
                                   </Button>
                                   <Button
                                     onClick={() => handleEdit(trip)}
                                     size="icon"
                                     variant="ghost"
-                                    className="h-7 w-7 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent"
+                                    className="h-7 w-7 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent shrink-0"
                                     title="Edit Draft"
                                   >
                                     <Edit2 className="h-3.5 w-3.5" />
@@ -627,7 +644,7 @@ export default function DispatcherView({ activeSubTab }) {
                                     onClick={() => handleDelete(trip.id)}
                                     size="icon"
                                     variant="ghost"
-                                    className="h-7 w-7 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 bg-transparent"
+                                    className="h-7 w-7 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 bg-transparent shrink-0"
                                     title="Delete Draft"
                                   >
                                     <Trash2 className="h-3.5 w-3.5" />
@@ -640,10 +657,9 @@ export default function DispatcherView({ activeSubTab }) {
                                   <Button
                                     onClick={() => { setCompletingTripId(trip.id); setIsCompleteModalOpen(true); }}
                                     size="sm"
-                                    variant="outline"
-                                    className="h-7 px-2.5 text-[10px] border-zinc-200 dark:border-zinc-800 bg-transparent text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 select-none flex items-center gap-1"
+                                    className="h-7 px-2.5 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white select-none flex items-center gap-1 font-semibold rounded-lg border border-emerald-500/10"
                                   >
-                                    <Check className="h-3 w-3 text-emerald-500" /> Complete
+                                    <Check className="h-3 w-3" /> Push status
                                   </Button>
                                   <Button
                                     onClick={() => handleCancel(trip.id)}
