@@ -34,6 +34,9 @@ router.post('/', validateRequest(createMaintenanceSchema), async (req: Request, 
     if (!vehicle) {
       return sendResponse(res, 404, false, 'Vehicle not found')
     }
+    if (vehicle.status === VehicleStatus.Retired) {
+      return sendResponse(res, 400, false, 'Cannot schedule maintenance for a retired vehicle')
+    }
 
     const log = await prisma.$transaction(async (tx) => {
       const createdLog = await tx.transitMaintenanceLog.create({

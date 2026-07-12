@@ -24,7 +24,8 @@ const registerSchema = z.object({
     'Fleet Manager', 'FleetManager',
     'Driver',
     'Safety Officer', 'SafetyOfficer',
-    'Financial Analyst', 'FinancialAnalyst'
+    'Financial Analyst', 'FinancialAnalyst',
+    'Dispatcher'
   ]),
 });
 
@@ -41,6 +42,8 @@ export const mapRoleToPrisma = (role: string): UserRole => {
     case 'Financial Analyst':
     case 'FinancialAnalyst':
       return UserRole.FinancialAnalyst;
+    case 'Dispatcher':
+      return UserRole.Dispatcher;
     default: return role as UserRole;
   }
 };
@@ -51,6 +54,7 @@ export const mapRoleToResponse = (role: UserRole): string => {
     case UserRole.Driver: return 'Driver';
     case UserRole.SafetyOfficer: return 'Safety Officer';
     case UserRole.FinancialAnalyst: return 'Financial Analyst';
+    case UserRole.Dispatcher: return 'Dispatcher';
     default: return role;
   }
 };
