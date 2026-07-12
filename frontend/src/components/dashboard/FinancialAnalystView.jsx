@@ -58,14 +58,14 @@ export default function FinancialAnalystView({ activeSubTab }) {
                 <tbody>
                   {expenses.map((e) => (
                     <tr key={e.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 text-zinc-800 dark:text-zinc-200 text-xs">
-                      <td className="py-3.5 px-4 font-semibold text-zinc-955 dark:text-zinc-55 text-xs">{e.ref}</td>
+                      <td className="py-3.5 px-4 font-semibold text-zinc-900 dark:text-zinc-200 text-xs">{e.ref}</td>
                       <td className="py-3.5 px-4 font-mono text-[10px]">{e.vehicle}</td>
                       <td className="py-3.5 px-4">
                         <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                           {e.type}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-zinc-555">{e.desc}</td>
+                      <td className="py-3.5 px-4 text-zinc-500">{e.desc}</td>
                       <td className="py-3.5 px-4 font-bold">₹{e.amount.toFixed(2)}</td>
                       <td className="py-3.5 px-4 font-mono text-[10px]">{e.date}</td>
                     </tr>
@@ -150,7 +150,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
             <Card className="lg:col-span-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
               <CardHeader>
                 <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Expense Breakdown</CardTitle>
-                <CardDescription className="text-xs text-zinc-550">Operating expense allocation by category</CardDescription>
+                <CardDescription className="text-xs text-zinc-500">Operating expense allocation by category</CardDescription>
               </CardHeader>
               <CardContent className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
@@ -173,7 +173,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                 <Fuel className="h-4 w-4 text-zinc-400" /> Fuel Surcharge Coverage
               </h4>
               <div className="p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl">
-                <span className="text-[10px] text-zinc-450 uppercase block leading-none">Net Fleet MPG</span>
+                <span className="text-[10px] text-zinc-400 uppercase block leading-none">Net Fleet MPG</span>
                 <span className="text-lg font-black text-zinc-900 dark:text-zinc-50 block mt-1.5">10.4 MPG</span>
               </div>
               <p className="text-[10px] text-zinc-500 leading-relaxed">
@@ -191,7 +191,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-zinc-500 block">Weekly Fuel Budget Limit (per vehicle)</label>
                 <div className="relative">
-                  <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-zinc-855 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
+                  <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
                     <option>₹500</option>
                     <option>₹800 (Default)</option>
                     <option>₹1,200</option>

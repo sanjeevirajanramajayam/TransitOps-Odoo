@@ -101,20 +101,20 @@ export default function DriverView({ activeSubTab }) {
             <Card className="lg:col-span-1 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
               <CardHeader>
                 <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Dispatch Command Form</CardTitle>
-                <CardDescription className="text-xs text-zinc-550">Initiate new dispatches. Auto-checks driver licenses, vehicle statuses, and weight limits.</CardDescription>
+                <CardDescription className="text-xs text-zinc-500">Initiate new dispatches. Auto-checks driver licenses, vehicle statuses, and weight limits.</CardDescription>
               </CardHeader>
               <form onSubmit={handleDispatch}>
                 <CardContent className="space-y-4">
                   {error && (
                     <div className="p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 flex items-start gap-2.5">
-                      <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-zinc-850 dark:text-zinc-150" />
+                      <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-zinc-800 dark:text-zinc-150" />
                       <span>{error}</span>
                     </div>
                   )}
 
                   {success && (
                     <div className="p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 flex items-start gap-2.5">
-                      <CheckCircle className="h-4 w-4 shrink-0 mt-0.5 text-zinc-850 dark:text-zinc-150" />
+                      <CheckCircle className="h-4 w-4 shrink-0 mt-0.5 text-zinc-800 dark:text-zinc-150" />
                       <span>{success}</span>
                     </div>
                   )}
@@ -192,7 +192,7 @@ export default function DriverView({ activeSubTab }) {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" className="w-full h-9 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-955 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-250 dark:border-zinc-800 text-sm font-semibold gap-1.5 select-none">
+                  <Button type="submit" className="w-full h-9 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-250 dark:border-zinc-800 text-sm font-semibold gap-1.5 select-none">
                     Dispatch Vehicle <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
                 </CardFooter>
@@ -248,11 +248,11 @@ export default function DriverView({ activeSubTab }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 rounded-xl space-y-4">
                 <CardTitle className="text-base text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  <ShieldCheck className="h-5 w-5 text-zinc-850 dark:text-zinc-150" /> Compliance & Safety Index
+                  <ShieldCheck className="h-5 w-5 text-zinc-800 dark:text-zinc-150" /> Compliance & Safety Index
                 </CardTitle>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-black text-zinc-900 dark:text-zinc-50">98 / 100</span>
-                  <span className="text-xs text-zinc-550 dark:text-zinc-450 font-semibold">Excellent Standing</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold">Excellent Standing</span>
                 </div>
                 <p className="text-[10px] text-zinc-500">Based on geofence compliance, brake analytics, and speed limit adherence.</p>
               </Card>
@@ -285,31 +285,31 @@ export default function DriverView({ activeSubTab }) {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="p-4 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl space-y-3">
-                <h4 className="font-bold text-xs uppercase tracking-wider text-zinc-450 flex items-center gap-1">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-zinc-400 flex items-center gap-1">
                   <Clock className="h-4 w-4" /> Drive Limit (11-Hour)
                 </h4>
                 <div className="text-2xl font-black">08h 15m remaining</div>
-                <div className="w-full bg-zinc-100 dark:bg-zinc-805 h-2 rounded-full overflow-hidden">
+                <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
                   <div className="h-full rounded-full bg-zinc-900 dark:bg-zinc-100" style={{ width: '75%' }}></div>
                 </div>
               </Card>
 
               <Card className="p-4 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl space-y-3">
-                <h4 className="font-bold text-xs uppercase tracking-wider text-zinc-450 flex items-center gap-1">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-zinc-400 flex items-center gap-1">
                   <Clock className="h-4 w-4" /> Duty Limit (14-Hour)
                 </h4>
                 <div className="text-2xl font-black">10h 30m remaining</div>
-                <div className="w-full bg-zinc-100 dark:bg-zinc-805 h-2 rounded-full overflow-hidden">
+                <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
                   <div className="h-full rounded-full bg-zinc-900 dark:bg-zinc-100" style={{ width: '70%' }}></div>
                 </div>
               </Card>
 
               <Card className="p-4 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl space-y-3">
-                <h4 className="font-bold text-xs uppercase tracking-wider text-zinc-455 flex items-center gap-1">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-zinc-400 flex items-center gap-1">
                   <Clock className="h-4 w-4" /> 70-Hour / 8-Day Limit
                 </h4>
                 <div className="text-2xl font-black">54h 20m remaining</div>
-                <div className="w-full bg-zinc-100 dark:bg-zinc-805 h-2 rounded-full overflow-hidden">
+                <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
                   <div className="h-full rounded-full bg-zinc-900 dark:bg-zinc-100" style={{ width: '77%' }}></div>
                 </div>
               </Card>

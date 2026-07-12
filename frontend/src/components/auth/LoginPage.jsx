@@ -57,7 +57,7 @@ export default function LoginPage({ onLogin }) {
             <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-tight text-white">
               Fleet & Dispatch Command
             </h1>
-            <p className="text-zinc-550 text-sm max-w-md mx-auto md:mx-0">
+            <p className="text-zinc-500 text-sm max-w-md mx-auto md:mx-0">
               Replace spreadsheets with dynamic routing, real-time logging, compliance alerts, and financial tracking.
             </p>
           </div>
@@ -91,7 +91,7 @@ export default function LoginPage({ onLogin }) {
                     className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-700 transition-colors"
                   />
                 </div>
-                {error && <p className="text-zinc-450 text-xs font-semibold">{error}</p>}
+                {error && <p className="text-zinc-400 text-xs font-semibold">{error}</p>}
                 <Button type="submit" className="w-full bg-zinc-100 text-zinc-950 hover:bg-zinc-200 font-bold rounded-xl py-2.5 text-xs flex items-center justify-center gap-1.5 border border-zinc-200">
                   Sign In <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
