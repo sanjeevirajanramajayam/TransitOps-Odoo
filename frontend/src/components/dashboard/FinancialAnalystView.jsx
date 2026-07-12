@@ -426,21 +426,21 @@ export default function FinancialAnalystView({ activeSubTab }) {
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold uppercase text-zinc-400">Date</label>
-                        <input type="date" value={fuelDate} onChange={(e) => setFuelDate(e.target.value)} required disabled={isSubmitting} className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none" />
+                        <input type="date" value={fuelDate} onChange={(e) => setFuelDate(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none" />
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold uppercase text-zinc-400">Volume (Liters)</label>
-                        <input type="number" step="any" placeholder="e.g. 50" value={fuelVolume} onChange={(e) => setFuelVolume(e.target.value)} required disabled={isSubmitting} className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none" />
+                        <input type="number" step="any" placeholder="e.g. 50" value={fuelVolume} onChange={(e) => setFuelVolume(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none" />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold uppercase text-zinc-400">Total Cost (₹)</label>
-                        <input type="number" step="any" placeholder="e.g. 4500" value={fuelCost} onChange={(e) => setFuelCost(e.target.value)} required disabled={isSubmitting} className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none" />
+                        <input type="number" step="any" placeholder="e.g. 4500" value={fuelCost} onChange={(e) => setFuelCost(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none" />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold uppercase text-zinc-400">MPG / Efficiency</label>
-                        <input type="text" placeholder="e.g. 12" value={fuelMpg} onChange={(e) => setFuelMpg(e.target.value)} required disabled={isSubmitting} className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none" />
+                        <input type="text" placeholder="e.g. 12" value={fuelMpg} onChange={(e) => setFuelMpg(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none" />
                       </div>
                     </div>
                     <div className="flex justify-end gap-2 pt-2">
@@ -475,8 +475,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                             value={expReg}
                             onChange={(e) => setExpReg(e.target.value)}
                             required
-                            disabled={isSubmitting}
-                            className="w-full appearance-none px-3 py-1.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs pr-8 text-zinc-900 dark:text-zinc-100"
+                            className="w-full appearance-none px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs pr-8 text-zinc-900 dark:text-zinc-100"
                           >
                             <option value="">Select vehicle...</option>
                             {availableVehicles.map(v => (
@@ -489,7 +488,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold uppercase text-zinc-400">Expense Type</label>
                         <div className="relative">
-                          <select value={expType} onChange={(e) => setExpType(e.target.value)} disabled={isSubmitting} className="w-full appearance-none px-3 py-1.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100">
+                          <select value={expType} onChange={(e) => setExpType(e.target.value)} className="w-full appearance-none px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100">
                             <option value="Maintenance">Maintenance</option>
                             <option value="Tolls">Tolls</option>
                             <option value="Insurance">Insurance</option>
@@ -501,16 +500,16 @@ export default function FinancialAnalystView({ activeSubTab }) {
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold uppercase text-zinc-400">Description</label>
-                      <input type="text" placeholder="e.g. Brake pad change" value={expDesc} onChange={(e) => setExpDesc(e.target.value)} required disabled={isSubmitting} className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none" />
+                      <input type="text" placeholder="e.g. Brake pad change" value={expDesc} onChange={(e) => setExpDesc(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none" />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold uppercase text-zinc-400">Amount (₹)</label>
-                        <input type="number" placeholder="e.g. 1500" value={expAmount} onChange={(e) => setExpAmount(e.target.value)} required disabled={isSubmitting} className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none" />
+                        <input type="number" placeholder="e.g. 1500" value={expAmount} onChange={(e) => setExpAmount(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none" />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold uppercase text-zinc-400">Date</label>
-                        <input type="date" value={expDate} onChange={(e) => setExpDate(e.target.value)} required disabled={isSubmitting} className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none" />
+                        <input type="date" value={expDate} onChange={(e) => setExpDate(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none" />
                       </div>
                     </div>
                     <div className="flex justify-end gap-2 pt-2">
