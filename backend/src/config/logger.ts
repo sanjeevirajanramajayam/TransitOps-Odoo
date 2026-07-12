@@ -62,7 +62,7 @@ const errorRotateFileTransport = new DailyRotateFile({
   level: 'error', // Catch error logs only
 });
 
-const isDevelopment = process.env.NODE_ENV === 'development';
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
 const transports: winston.transport[] = [
   appRotateFileTransport,
