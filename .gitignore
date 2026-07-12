@@ -5,4 +5,5 @@ build/
 .DS_Store
 coverage/
 *.log
+logs/
 REQUIREMENTS.md
