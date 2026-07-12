@@ -60,6 +60,7 @@ export default function DispatcherView({ activeSubTab }) {
           reg: v.registrationNumber,
           model: v.modelName,
           type: v.vehicleType,
+          maxLoadCapacity: v.maxLoadCapacity,
           cap: `${v.maxLoadCapacity.toLocaleString()} kg`,
           odo: `${v.currentOdometer.toLocaleString()} mi`,
           status: v.status === 'OnTrip' ? 'On Trip' : v.status === 'InShop' ? 'In Shop' : v.status,
@@ -72,7 +73,8 @@ export default function DispatcherView({ activeSubTab }) {
           id: d.id,
           name: d.name,
           status: d.status === 'OnTrip' ? 'On Trip' : d.status === 'OffDuty' ? 'Off Duty' : d.status,
-          safetyScore: d.safetyScore
+          safetyScore: d.safetyScore,
+          licenseExpiryDate: d.licenseExpiryDate
         })))
       }
 
@@ -111,6 +113,13 @@ export default function DispatcherView({ activeSubTab }) {
     if (!revenue || parseFloat(revenue) <= 0) errors.revenue = 'Estimated revenue must be a positive number'
     if (!assignedVehicleId) errors.vehicleId = 'Please select a vehicle'
     if (!assignedDriverId) errors.driverId = 'Please select a driver'
+
+    if (assignedVehicleId && cargoWeight && parseFloat(cargoWeight) > 0) {
+      const selectedVehicle = vehicles.find(v => v.id.toString() === assignedVehicleId.toString())
+      if (selectedVehicle && parseFloat(cargoWeight) > selectedVehicle.maxLoadCapacity) {
+        errors.cargoWeight = `Cargo weight cannot exceed vehicle capacity (${selectedVehicle.maxLoadCapacity.toLocaleString()} kg)`
+      }
+    }
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors)
@@ -497,7 +506,7 @@ export default function DispatcherView({ activeSubTab }) {
                           className={`w-full appearance-none pl-3 pr-8 py-2 bg-white dark:bg-zinc-900 border rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none transition-colors ${fieldErrors.vehicleId ? 'border-red-500 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-800 focus:border-zinc-400'}`}
                         >
                           <option value="">Select vehicle...</option>
-                          {vehicles.map((v) => (
+                          {vehicles.filter(v => v.status !== 'In Shop' && v.status !== 'Retired').map((v) => (
                             <option
                               key={v.id}
                               value={v.id}
@@ -521,7 +530,7 @@ export default function DispatcherView({ activeSubTab }) {
                           className={`w-full appearance-none pl-3 pr-8 py-2 bg-white dark:bg-zinc-900 border rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none transition-colors ${fieldErrors.driverId ? 'border-red-500 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-800 focus:border-zinc-400'}`}
                         >
                           <option value="">Select driver...</option>
-                          {drivers.map((d) => (
+                          {drivers.filter(d => d.status !== 'Suspended' && new Date(d.licenseExpiryDate) >= new Date()).map((d) => (
                             <option
                               key={d.id}
                               value={d.id}
