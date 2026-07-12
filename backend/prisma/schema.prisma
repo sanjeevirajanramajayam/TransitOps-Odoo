@@ -1,0 +1,117 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum VehicleStatus {
+  Available
+  OnTrip    @map("On Trip")
+  InShop    @map("In Shop")
+  Retired
+}
+
+model TransitVehicle {
+  id                 Int                     @id @default(autoincrement())
+  registrationNumber String                  @unique @map("registration_number")
+  modelName          String                  @map("model_name")
+  vehicleType        String                  @map("vehicle_type")
+  maxLoadCapacity    Float                   @map("max_load_capacity")
+  currentOdometer    Float                   @map("current_odometer")
+  acquisitionCost    Float                   @map("acquisition_cost")
+  status             VehicleStatus           @default(Available)
+  trips              TransitTrip[]
+  maintenanceLogs    TransitMaintenanceLog[]
+  fuelLogs           TransitFuelLog[]
+  expenses           TransitExpense[]
+
+  @@map("transit_vehicle")
+}
+
+enum DriverStatus {
+  Available
+  OnTrip    @map("On Trip")
+  OffDuty   @map("Off Duty")
+  Suspended
+}
+
+model TransitDriver {
+  id                Int          @id @default(autoincrement())
+  name              String
+  licenseNumber     String       @unique @map("license_number")
+  licenseCategory   String       @map("license_category")
+  licenseExpiryDate DateTime     @map("license_expiry_date")
+  contactNumber     String       @map("contact_number")
+  safetyScore       Float        @map("safety_score")
+  status            DriverStatus @default(Available)
+  trips             TransitTrip[]
+
+  @@map("transit_driver")
+}
+
+enum TripStatus {
+  Draft
+  Dispatched
+  Completed
+  Cancelled
+}
+
+model TransitTrip {
+  id                     Int            @id @default(autoincrement())
+  source                 String
+  destination            String
+  vehicleId              Int            @map("vehicle_id")
+  driverId               Int            @map("driver_id")
+  cargoWeight            Float          @map("cargo_weight")
+  plannedDistance        Float          @map("planned_distance")
+  actualDistanceTraveled Float?         @map("actual_distance_traveled")
+  revenue                Float
+  status                 TripStatus     @default(Draft)
+  createdAt              DateTime       @default(now()) @map("created_at")
+
+  vehicle                TransitVehicle @relation(fields: [vehicleId], references: [id])
+  driver                 TransitDriver  @relation(fields: [driverId], references: [id])
+
+  @@map("transit_trip")
+}
+
+model TransitMaintenanceLog {
+  id          Int            @id @default(autoincrement())
+  vehicleId   Int            @map("vehicle_id")
+  description String
+  cost        Float
+  date        DateTime       @default(now())
+
+  vehicle     TransitVehicle @relation(fields: [vehicleId], references: [id])
+
+  @@map("transit_maintenance_log")
+}
+
+model TransitFuelLog {
+  id              Int            @id @default(autoincrement())
+  vehicleId       Int            @map("vehicle_id")
+  fuelAmount      Float          @map("fuel_amount")
+  cost            Float
+  odometerReading Float          @map("odometer_reading")
+  date            DateTime       @default(now())
+
+  vehicle         TransitVehicle @relation(fields: [vehicleId], references: [id])
+
+  @@map("transit_fuel_log")
+}
+
+model TransitExpense {
+  id          Int            @id @default(autoincrement())
+  vehicleId   Int            @map("vehicle_id")
+  expenseType String         @map("expense_type")
+  amount      Float
+  date        DateTime       @default(now())
+  description String?
+
+  vehicle     TransitVehicle @relation(fields: [vehicleId], references: [id])
+
+  @@map("transit_expense")
+}
