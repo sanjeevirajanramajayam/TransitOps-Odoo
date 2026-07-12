@@ -5,6 +5,17 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import prisma from './db';
 
+import authRouter from './routes/auth';
+import vehiclesRouter from './routes/vehicles';
+import driversRouter from './routes/drivers';
+import tripsRouter from './routes/trips';
+import maintenanceRouter from './routes/maintenance';
+import expensesRouter from './routes/expenses';
+import analyticsRouter from './routes/analytics';
+import documentsRouter from './routes/documents';
+import alertsRouter from './routes/alerts';
+import auditRouter from './routes/audit';
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -42,6 +53,18 @@ app.get('/api/db-test', async (req: Request, res: Response, next: NextFunction) 
     next(err);
   }
 });
+
+// Mounted API Routes
+app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/vehicles', vehiclesRouter);
+app.use('/api/v1/drivers', driversRouter);
+app.use('/api/v1/trips', tripsRouter);
+app.use('/api/v1/maintenance', maintenanceRouter);
+app.use('/api/v1/expenses', expensesRouter);
+app.use('/api/v1/analytics', analyticsRouter);
+app.use('/api/v1/documents', documentsRouter);
+app.use('/api/v1/alerts', alertsRouter);
+app.use('/api/v1/audit-logs', auditRouter);
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error('Unhandled Error:', err);
