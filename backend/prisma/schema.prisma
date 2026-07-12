@@ -95,14 +95,20 @@ model TransitTrip {
   @@map("transit_trip")
 }
 
+enum MaintenanceStatus {
+  Active
+  Closed
+}
+
 model TransitMaintenanceLog {
-  id          Int            @id @default(autoincrement())
-  vehicleId   Int            @map("vehicle_id")
+  id          Int               @id @default(autoincrement())
+  vehicleId   Int               @map("vehicle_id")
   description String
   cost        Float
-  date        DateTime       @default(now())
+  status      MaintenanceStatus @default(Active)
+  date        DateTime          @default(now())
 
-  vehicle     TransitVehicle @relation(fields: [vehicleId], references: [id])
+  vehicle     TransitVehicle    @relation(fields: [vehicleId], references: [id])
 
   @@map("transit_maintenance_log")
 }
