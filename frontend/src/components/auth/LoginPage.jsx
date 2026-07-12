@@ -25,8 +25,8 @@ export default function LoginPage({ onLogin }) {
       color: 'text-zinc-100 bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900'
     },
     {
-      name: 'Driver',
-      description: 'Manage deliveries, dispatches, and log trips',
+      name: 'Dispatcher',
+      description: 'Monitor fleet availability and dispatch active trips',
       icon: Users,
       color: 'text-zinc-100 bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900'
     },

@@ -8,7 +8,11 @@ describe('Audit Logs API', () => {
 
   beforeAll(async () => {
     // Cleanup users and other test logs to prevent clashes
+    await prisma.transitAlert.deleteMany({});
     await prisma.transitTrip.deleteMany({});
+    await prisma.transitMaintenanceLog.deleteMany({});
+    await prisma.transitFuelLog.deleteMany({});
+    await prisma.transitExpense.deleteMany({});
     await prisma.transitVehicle.deleteMany({});
     await prisma.transitDriver.deleteMany({});
     await prisma.user.deleteMany({});

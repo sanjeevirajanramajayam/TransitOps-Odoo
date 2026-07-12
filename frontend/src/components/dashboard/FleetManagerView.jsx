@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line } from 'recharts'
@@ -9,14 +9,7 @@ import {
 } from 'lucide-react'
 
 export default function FleetManagerView({ activeSubTab, setActiveTab }) {
-  const [vehicles, setVehicles] = useState([
-    { id: 1, reg: 'TX-8902', model: 'Ford Transit', type: 'Van', cap: '3,500 lbs', odo: '45,200 mi', status: 'Available' },
-    { id: 2, reg: 'CA-4412', model: 'Freightliner M2', type: 'Truck', cap: '15,000 lbs', odo: '120,400 mi', status: 'On Trip' },
-    { id: 3, reg: 'NY-1029', model: 'Ram ProMaster', type: 'Van', cap: '4,000 lbs', odo: '28,100 mi', status: 'In Shop' },
-    { id: 4, reg: 'FL-7711', model: 'Volvo VNL 860', type: 'Semi', cap: '45,000 lbs', odo: '310,000 mi', status: 'Available' },
-    { id: 5, reg: 'IL-5050', model: 'Isuzu NPR', type: 'Box Truck', cap: '10,000 lbs', odo: '95,300 mi', status: 'Retired' }
-  ])
-
+  const [vehicles, setVehicles] = useState([])
   const [driversList, setDriversList] = useState([
     { id: 1, name: 'Alex Rivera', license: 'CDL-A-9012', expiry: '2027-12-31', contact: '+1 (555) 123-4567', safetyScore: 98, status: 'Available', vehicle: 'TX-8902', img: '/driver1.png', email: 'alex.r@transitops.com' },
     { id: 2, name: 'Priya Patel', license: 'CDL-A-7019', expiry: '2028-04-15', contact: '+1 (555) 987-6543', safetyScore: 95, status: 'On Trip', vehicle: 'CA-4412', img: '/driver2.png', email: 'priya.p@transitops.com' },
@@ -25,8 +18,40 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
   ])
 
   // New vehicle & driver form states
-  const [newVehicle, setNewVehicle] = useState({ reg: '', model: '', type: 'Van', cap: '', odo: '', status: 'Available' })
+  const [newVehicle, setNewVehicle] = useState({ reg: '', model: '', type: 'Van', cap: '', odo: '', cost: '', status: 'Available' })
   const [newDriver, setNewDriver] = useState({ name: '', license: '', expiry: '', contact: '', safetyScore: 95, status: 'Available', vehicle: 'None', email: '' })
+
+  const [vehicleFormError, setVehicleFormError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
+  const [isLoading, setIsLoading] = useState(false)
+
+  const fetchVehicles = async () => {
+    setIsLoading(true)
+    try {
+      const res = await fetch('http://localhost:5000/api/v1/vehicles')
+      const data = await res.json()
+      if (data.success) {
+        const mapped = data.data.map(v => ({
+          id: v.id,
+          reg: v.registrationNumber,
+          model: v.modelName,
+          type: v.vehicleType,
+          cap: `${v.maxLoadCapacity.toLocaleString()} lbs`,
+          odo: `${v.currentOdometer.toLocaleString()} mi`,
+          status: v.status === 'OnTrip' ? 'On Trip' : v.status === 'InShop' ? 'In Shop' : v.status
+        }))
+        setVehicles(mapped)
+      }
+    } catch (err) {
+      console.error('Failed to fetch vehicles', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchVehicles()
+  }, [])
 
   // Dispatch form states
   const [dispatchSource, setDispatchSource] = useState('')
@@ -38,8 +63,8 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
   const [dispatchSuccess, setDispatchSuccess] = useState('')
 
   const [activeTrips, setActiveTrips] = useState([
-    { id: 1, source: 'Dallas, TX', dest: 'Houston, TX', vehicle: 'TX-8902', driver: 'Alex Rivera', weight: '2,800 lbs', status: 'On Trip' },
-    { id: 2, source: 'Los Angeles, CA', dest: 'San Jose, CA', vehicle: 'CA-4412', driver: 'Priya Patel', weight: '11,200 lbs', status: 'Dispatched' }
+    { id: 1, source: 'Dallas, TX', dest: 'Houston, TX', vehicle: 'TX-8902', driver: 'Alex Rivera', weight: '2,800 kg', status: 'On Trip' },
+    { id: 2, source: 'Los Angeles, CA', dest: 'San Jose, CA', vehicle: 'CA-4412', driver: 'Priya Patel', weight: '11,200 kg', status: 'Dispatched' }
   ])
 
   const [vehicleSearch, setVehicleSearch] = useState('')
@@ -105,12 +130,82 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
     return matchesSearch && matchesType && matchesStatus
   })
 
-  const handleVehicleSubmit = (e) => {
+  const handleVehicleSubmit = async (e) => {
     e.preventDefault()
-    const id = vehicles.length + 1
-    setVehicles([...vehicles, { id, ...newVehicle }])
-    setNewVehicle({ reg: '', model: '', type: 'Van', cap: '', odo: '0 mi', status: 'Available' })
-    setActiveTab('Vehicles')
+    setVehicleFormError('')
+    setFieldErrors({})
+
+    const errors = {}
+    
+    const regClean = newVehicle.reg.trim().toUpperCase()
+    if (!regClean) {
+      errors.reg = 'Registration number is required'
+    } else if (!/^[A-Z0-9\-\s]{4,15}$/.test(regClean)) {
+      errors.reg = 'Must be 4-15 characters, alphanumeric, spaces or hyphens only'
+    }
+
+    const modelClean = newVehicle.model.trim()
+    if (!modelClean) {
+      errors.model = 'Model name is required'
+    } else if (modelClean.length < 2) {
+      errors.model = 'Model name must be at least 2 characters'
+    }
+
+    const capRaw = newVehicle.cap.replace(/[^\d\.]/g, '')
+    const capNum = parseFloat(capRaw)
+    if (isNaN(capNum) || capNum <= 0) {
+      errors.cap = 'Max capacity must be a positive number'
+    }
+
+    const odoRaw = newVehicle.odo.replace(/[^\d\.]/g, '')
+    const odoNum = parseFloat(odoRaw)
+    if (isNaN(odoNum) || odoNum < 0) {
+      errors.odo = 'Odometer reading must be a non-negative number'
+    }
+
+    const costRaw = newVehicle.cost.replace(/[^\d\.]/g, '')
+    const costNum = parseFloat(costRaw)
+    if (isNaN(costNum) || costNum <= 0) {
+      errors.cost = 'Acquisition cost must be a positive number'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      return
+    }
+
+    try {
+      const res = await fetch('http://localhost:5000/api/v1/vehicles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          registrationNumber: regClean,
+          modelName: modelClean,
+          vehicleType: newVehicle.type,
+          maxLoadCapacity: capNum,
+          currentOdometer: odoNum,
+          acquisitionCost: costNum
+        })
+      })
+
+      const data = await res.json()
+      if (res.status === 201) {
+        setNewVehicle({ reg: '', model: '', type: 'Van', cap: '', odo: '', cost: '', status: 'Available' })
+        fetchVehicles()
+        setActiveTab('Vehicles')
+      } else if (res.status === 422 && data.data?.errors) {
+        const apiErrors = {}
+        data.data.errors.forEach(err => {
+          apiErrors[err.field] = err.message
+        })
+        setFieldErrors(apiErrors)
+        setVehicleFormError('Validation failed. Please check the inputs.')
+      } else {
+        setVehicleFormError(data.message || 'Failed to register vehicle')
+      }
+    } catch (err) {
+      setVehicleFormError('Network error: Failed to reach the server')
+    }
   }
 
   const handleDriverSubmit = (e) => {
@@ -162,7 +257,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
     const inputWeight = parseFloat(dispatchWeight)
     const vehicleMaxCap = parseFloat(vehicle.cap.replace(/[^0-9]/g, '')) || 5000
     if (inputWeight > vehicleMaxCap) {
-      setDispatchError(`Capacity Guard: Cargo weight (${inputWeight} lbs) exceeds the vehicle's maximum capacity (${vehicle.cap} for ${vehicle.reg})`)
+      setDispatchError(`Capacity Guard: Cargo weight (${inputWeight} kg) exceeds the vehicle's maximum capacity (${vehicle.cap} for ${vehicle.reg})`)
       return
     }
 
@@ -172,7 +267,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
       dest: dispatchDestination,
       vehicle: vehicle.reg,
       driver: driver.name,
-      weight: `${inputWeight.toLocaleString()} lbs`,
+      weight: `${inputWeight.toLocaleString()} kg`,
       status: 'Dispatched'
     }
 
@@ -949,6 +1044,13 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
               </div>
             </div>
 
+            {vehicleFormError && (
+              <div className="p-3.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/50 rounded-xl flex gap-2.5 text-xs text-red-700 dark:text-red-400">
+                <AlertTriangle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                <span>{vehicleFormError}</span>
+              </div>
+            )}
+
             <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
               <form onSubmit={handleVehicleSubmit}>
                 <CardContent className="p-6 space-y-4">
@@ -961,8 +1063,11 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                         placeholder="e.g. TX-8902" 
                         value={newVehicle.reg}
                         onChange={(e) => setNewVehicle({...newVehicle, reg: e.target.value})}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        className={`w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border ${fieldErrors.reg || fieldErrors.registrationNumber ? 'border-red-500' : 'border-zinc-200 dark:border-zinc-800'} rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none`}
                       />
+                      {(fieldErrors.reg || fieldErrors.registrationNumber) && (
+                        <p className="text-[10px] text-red-500 font-medium">{fieldErrors.reg || fieldErrors.registrationNumber}</p>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs uppercase font-bold text-zinc-400">Model Name</label>
@@ -972,8 +1077,11 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                         placeholder="e.g. Ford Transit" 
                         value={newVehicle.model}
                         onChange={(e) => setNewVehicle({...newVehicle, model: e.target.value})}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        className={`w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border ${fieldErrors.model || fieldErrors.modelName ? 'border-red-500' : 'border-zinc-200 dark:border-zinc-800'} rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none`}
                       />
+                      {(fieldErrors.model || fieldErrors.modelName) && (
+                        <p className="text-[10px] text-red-500 font-medium">{fieldErrors.model || fieldErrors.modelName}</p>
+                      )}
                     </div>
                   </div>
 
@@ -999,11 +1107,14 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                       <input 
                         type="text" 
                         required
-                        placeholder="e.g. 3,500 lbs" 
+                        placeholder="e.g. 3,500 kg" 
                         value={newVehicle.cap}
                         onChange={(e) => setNewVehicle({...newVehicle, cap: e.target.value})}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        className={`w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border ${fieldErrors.cap || fieldErrors.maxLoadCapacity ? 'border-red-500' : 'border-zinc-200 dark:border-zinc-800'} rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none`}
                       />
+                      {(fieldErrors.cap || fieldErrors.maxLoadCapacity) && (
+                        <p className="text-[10px] text-red-500 font-medium">{fieldErrors.cap || fieldErrors.maxLoadCapacity}</p>
+                      )}
                     </div>
                   </div>
 
@@ -1016,9 +1127,29 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                         placeholder="e.g. 45,200 mi" 
                         value={newVehicle.odo}
                         onChange={(e) => setNewVehicle({...newVehicle, odo: e.target.value})}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        className={`w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border ${fieldErrors.odo || fieldErrors.currentOdometer ? 'border-red-500' : 'border-zinc-200 dark:border-zinc-800'} rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none`}
                       />
+                      {(fieldErrors.odo || fieldErrors.currentOdometer) && (
+                        <p className="text-[10px] text-red-500 font-medium">{fieldErrors.odo || fieldErrors.currentOdometer}</p>
+                      )}
                     </div>
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">Acquisition Cost</label>
+                      <input 
+                        type="text" 
+                        required
+                        placeholder="e.g. 2,50,000" 
+                        value={newVehicle.cost}
+                        onChange={(e) => setNewVehicle({...newVehicle, cost: e.target.value})}
+                        className={`w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border ${fieldErrors.cost || fieldErrors.acquisitionCost ? 'border-red-500' : 'border-zinc-200 dark:border-zinc-800'} rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none`}
+                      />
+                      {(fieldErrors.cost || fieldErrors.acquisitionCost) && (
+                        <p className="text-[10px] text-red-500 font-medium">{fieldErrors.cost || fieldErrors.acquisitionCost}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-xs uppercase font-bold text-zinc-400">Status</label>
                       <div className="relative">
@@ -1028,8 +1159,8 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                           className="w-full appearance-none pl-3 pr-8 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
                         >
                           <option value="Available">Available</option>
-                          <option value="On Trip">On Trip</option>
-                          <option value="In Shop">In Shop</option>
+                          <option value="OnTrip">On Trip</option>
+                          <option value="InShop">In Shop</option>
                           <option value="Retired">Retired</option>
                         </select>
                         <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
@@ -1177,7 +1308,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
           </div>
         )
 
-      case 'Assign Dispatch':
+      case 'Trip':
         return (
           <div className="space-y-6">
             <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Fleet Dispatch Command</h3>
@@ -1225,7 +1356,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs uppercase font-bold text-zinc-400">Cargo Weight (lbs)</label>
+                      <label className="text-xs uppercase font-bold text-zinc-400">Cargo Weight (kg)</label>
                       <input
                         type="number"
                         required
@@ -1245,7 +1376,12 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                         >
                           <option value="">Select vehicle...</option>
                           {vehicles.map((v) => (
-                            <option key={v.id} value={v.id}>
+                            <option
+                              key={v.id}
+                              value={v.id}
+                              disabled={v.status !== 'Available'}
+                              className={v.status !== 'Available' ? 'text-zinc-400 dark:text-zinc-600 bg-zinc-50 dark:bg-zinc-950/20' : ''}
+                            >
                               {v.reg} ({v.model}) - Max {v.cap} [{v.status}]
                             </option>
                           ))}
@@ -1263,7 +1399,12 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                         >
                           <option value="">Select driver...</option>
                           {driversList.map((d) => (
-                            <option key={d.id} value={d.id}>
+                            <option
+                              key={d.id}
+                              value={d.id}
+                              disabled={d.status !== 'Available'}
+                              className={d.status !== 'Available' ? 'text-zinc-400 dark:text-zinc-600 bg-zinc-50 dark:bg-zinc-950/20' : ''}
+                            >
                               {d.name} - CDL Exp: {d.expiry} [{d.status}]
                             </option>
                           ))}
