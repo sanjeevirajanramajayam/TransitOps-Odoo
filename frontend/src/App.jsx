@@ -36,7 +36,6 @@ export default function App() {
           { name: 'Drivers', icon: Users },
           { name: 'Tracking & GPS', icon: MapPin },
           { name: 'Maintenance', icon: Wrench },
-          { name: 'Fuel & Costs', icon: Fuel },
           { name: 'Safety & Alerts', icon: ShieldAlert },
           { name: 'Compliance & Docs', icon: FileCheck },
           { name: 'Settings', icon: Settings }
@@ -56,7 +55,7 @@ export default function App() {
         ]
       case 'Financial Analyst':
         return [
-          { name: 'Expense Ledger', icon: Landmark },
+          { name: 'Fuel and Expenses', icon: Landmark },
           { name: 'ROI Reports', icon: TrendingUp },
           { name: 'Fuel Optimization', icon: Fuel },
           { name: 'Settings', icon: Settings }

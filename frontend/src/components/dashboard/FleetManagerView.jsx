@@ -674,75 +674,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
           </div>
         )
 
-      case 'Fuel & Costs':
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
-                <CardHeader>
-                  <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Recent Fuel Logs</CardTitle>
-                  <CardDescription className="text-xs text-zinc-500">Verified telemetry pump purchases and gas logs.</CardDescription>
-                </CardHeader>
-                <CardContent className="overflow-x-auto">
-                  <table className="w-full text-left text-sm border-collapse">
-                    <thead>
-                      <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 font-medium text-xs">
-                        <th className="py-2.5 px-3">Log ID</th>
-                        <th className="py-2.5 px-3">Vehicle</th>
-                        <th className="py-2.5 px-3">Log Date</th>
-                        <th className="py-2.5 px-3">Gallons</th>
-                        <th className="py-2.5 px-3">Total Cost</th>
-                        <th className="py-2.5 px-3">Asset MPG</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {fuelLogs.map((log) => (
-                        <tr key={log.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-slate-50/50 dark:hover:bg-zinc-900/50 text-xs text-zinc-800 dark:text-zinc-200">
-                          <td className="py-3 px-3 text-xs font-semibold text-xs text-zinc-950 dark:text-zinc-50">{log.id}</td>
-                          <td className="py-3 px-3 text-xs font-bold">{log.reg}</td>
-                          <td className="py-3 px-3 text-xs text-[10px] text-zinc-500 dark:text-zinc-400">{log.date}</td>
-                          <td className="py-3 px-3 text-xs">{log.gallons} gal</td>
-                          <td className="py-3 px-3 text-xs font-semibold text-xs text-zinc-900 dark:text-zinc-50">{log.cost}</td>
-                          <td className="py-3 px-3 text-xs font-mono text-sm">{log.mpg} MPG</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </CardContent>
-              </Card>
 
-              <div className="space-y-4">
-                <Card className="p-4 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl space-y-4">
-                  <h4 className="font-bold text-xs text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                    <Fuel className="h-4 w-4 text-zinc-400" /> Fuel Economy Metrics
-                  </h4>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800 rounded-xl">
-                      <span className="text-[10px] text-zinc-400 uppercase block leading-none">Total Expense</span>
-                      <span className="text-base font-black text-zinc-900 dark:text-zinc-50 block mt-1.5">₹807.30</span>
-                    </div>
-
-                    <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800 rounded-xl">
-                      <span className="text-[10px] text-zinc-400 uppercase block leading-none">Carbon Offset</span>
-                      <span className="text-base font-black text-zinc-800 dark:text-zinc-100 block mt-1.5">-0.82 tons</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-1 pt-2">
-                    <div className="flex justify-between text-[10px] text-zinc-500">
-                      <span>Monthly Budget Fuel Cap</span>
-                      <span>38% Used</span>
-                    </div>
-                    <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-2.5 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full bg-zinc-900 dark:bg-zinc-100" style={{ width: '38%' }}></div>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            </div>
-          </div>
-        )
 
       case 'Safety & Alerts':
         return (

@@ -2,7 +2,10 @@ import { useState } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, BarChart, Bar, Cell } from 'recharts'
-import { DollarSign, ArrowUpRight, TrendingUp, Download, Landmark, Fuel, ChevronDown, IndianRupee } from 'lucide-react'
+import {
+  DollarSign, ArrowUpRight, TrendingUp, Download, Landmark, Fuel,
+  ChevronDown, IndianRupee, Plus, FileText, Calendar, Info, X
+} from 'lucide-react'
 
 export default function FinancialAnalystView({ activeSubTab }) {
   const financialData = [
@@ -21,59 +24,266 @@ export default function FinancialAnalystView({ activeSubTab }) {
     { name: 'Insurance', value: 1800, color: '#a1a1aa' }
   ]
 
-  const expenses = [
-    { id: 1, ref: 'EXP-9021', vehicle: 'TX-8902', type: 'Fuel Log', amount: 120.50, date: '2026-07-11', desc: '50 Gallons Diesel' },
+  // States for CRUD Logs
+  const [expenses, setExpenses] = useState([
+    { id: 1, ref: 'EXP-9021', vehicle: 'TX-8902', type: 'Maintenance', amount: 120.50, date: '2026-07-11', desc: 'Engine Check' },
     { id: 2, ref: 'EXP-8843', vehicle: 'NY-1029', type: 'Maintenance', amount: 450.00, date: '2026-07-10', desc: 'Brake Pad Replacement' },
     { id: 3, ref: 'EXP-8812', vehicle: 'CA-4412', type: 'Tolls', amount: 45.00, date: '2026-07-09', desc: 'Highway Express Pass' },
-    { id: 4, ref: 'EXP-8790', vehicle: 'FL-7711', type: 'Fuel Log', amount: 380.00, date: '2026-07-08', desc: 'Full Tank Refill' },
-    { id: 5, ref: 'EXP-8640', vehicle: 'IL-5050', type: 'Insurance', amount: 150.00, date: '2026-07-05', desc: 'Monthly Liability' }
-  ]
+    { id: 4, ref: 'EXP-8790', vehicle: 'FL-7711', type: 'Insurance', amount: 380.00, date: '2026-07-08', desc: 'Liability Insurance' }
+  ])
+
+  const [fuelLogs, setFuelLogs] = useState([
+    { id: 1, reg: 'TX-8902', date: '2026-07-12', volume: '18.4 L', cost: '₹1,500', mpg: '14.2 km/l' },
+    { id: 2, reg: 'CA-4412', date: '2026-07-11', volume: '45.2 L', cost: '₹3,800', mpg: '7.8 km/l' },
+    { id: 3, reg: 'NY-1029', date: '2026-07-11', volume: '15.0 L', cost: '₹1,250', mpg: '13.5 km/l' }
+  ])
+
+  // Form states
+  const [isFuelFormOpen, setIsFuelFormOpen] = useState(false)
+  const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false)
+
+  // Fuel form fields
+  const [fuelReg, setFuelReg] = useState('')
+  const [fuelDate, setFuelDate] = useState('')
+  const [fuelVolume, setFuelVolume] = useState('')
+  const [fuelCost, setFuelCost] = useState('')
+  const [fuelMpg, setFuelMpg] = useState('')
+
+  // Expense form fields
+  const [expReg, setExpReg] = useState('')
+  const [expType, setExpType] = useState('Maintenance')
+  const [expDesc, setExpDesc] = useState('')
+  const [expAmount, setExpAmount] = useState('')
+  const [expDate, setExpDate] = useState('')
+
+  const handleAddFuel = (e) => {
+    e.preventDefault()
+    if (!fuelReg || !fuelDate || !fuelVolume || !fuelCost || !fuelMpg) return
+    
+    const newLog = {
+      id: fuelLogs.length + 1,
+      reg: fuelReg,
+      date: fuelDate,
+      volume: `${fuelVolume} L`,
+      cost: `₹${parseFloat(fuelCost).toLocaleString()}`,
+      mpg: `${fuelMpg} km/l`
+    }
+    setFuelLogs([newLog, ...fuelLogs])
+    setIsFuelFormOpen(false)
+    clearFuelForm()
+  }
+
+  const handleAddExpense = (e) => {
+    e.preventDefault()
+    if (!expReg || !expDesc || !expAmount || !expDate) return
+
+    const newExp = {
+      id: expenses.length + 1,
+      ref: `EXP-${Math.floor(1000 + Math.random() * 9000)}`,
+      vehicle: expReg,
+      type: expType,
+      amount: parseFloat(expAmount),
+      date: expDate,
+      desc: expDesc
+    }
+    setExpenses([newExp, ...expenses])
+    setIsExpenseFormOpen(false)
+    clearExpenseForm()
+  }
+
+  const clearFuelForm = () => {
+    setFuelReg('')
+    setFuelDate('')
+    setFuelVolume('')
+    setFuelCost('')
+    setFuelMpg('')
+  }
+
+  const clearExpenseForm = () => {
+    setExpReg('')
+    setExpType('Maintenance')
+    setExpDesc('')
+    setExpAmount('')
+    setExpDate('')
+  }
 
   const renderContent = () => {
     switch (activeSubTab) {
-      case 'Expense Ledger':
+      case 'Fuel and Expenses':
         return (
-          <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Recent Ledger Transactions</CardTitle>
-                <CardDescription className="text-[10px] text-zinc-500">Direct expenses, maintenance logs, and fuel logs recorded this week.</CardDescription>
-              </div>
-              <Button size="sm" className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 gap-1.5 bg-transparent text-zinc-900 dark:text-zinc-100 select-none">
-                <Download className="h-3.5 w-3.5" /> Export Ledger
+          <div className="space-y-6 relative">
+            {/* Scrolled / High Z-Index top right action buttons */}
+            <div className="fixed top-[72px] right-8 z-50 flex gap-2.5 bg-white/70 dark:bg-zinc-950/70 backdrop-blur border border-zinc-200 dark:border-zinc-800 p-2 rounded-xl shadow-lg">
+              <Button
+                onClick={() => { setIsExpenseFormOpen(false); setIsFuelFormOpen(true); }}
+                size="sm"
+                className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 select-none"
+              >
+                <Fuel className="h-3.5 w-3.5 mr-1" /> Log Fuel
               </Button>
-            </CardHeader>
-            <CardContent className="overflow-x-auto">
-              <table className="w-full text-left text-sm border-collapse">
-                <thead>
-                  <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 font-medium text-xs">
-                    <th className="py-3 px-4">Reference</th>
-                    <th className="py-3 px-4">Vehicle</th>
-                    <th className="py-3 px-4">Type</th>
-                    <th className="py-3 px-4">Description</th>
-                    <th className="py-3 px-4">Amount</th>
-                    <th className="py-3 px-4">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {expenses.map((e) => (
-                    <tr key={e.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 text-zinc-800 dark:text-zinc-200 text-xs">
-                      <td className="py-3.5 px-4 font-semibold text-zinc-900 dark:text-zinc-200 text-xs">{e.ref}</td>
-                      <td className="py-3.5 px-4 font-mono text-[10px]">{e.vehicle}</td>
-                      <td className="py-3.5 px-4">
-                        <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
-                          {e.type}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-zinc-500">{e.desc}</td>
-                      <td className="py-3.5 px-4 font-bold">₹{e.amount.toFixed(2)}</td>
-                      <td className="py-3.5 px-4 font-mono text-[10px]">{e.date}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </CardContent>
-          </Card>
+              <Button
+                onClick={() => { setIsFuelFormOpen(false); setIsExpenseFormOpen(true); }}
+                size="sm"
+                className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 select-none"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1" /> Log Expense
+              </Button>
+            </div>
+
+            {/* Forms overlays */}
+            {isFuelFormOpen && (
+              <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-md rounded-xl p-5 space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Log Fuel Purchase</h3>
+                  <Button variant="ghost" size="icon" onClick={() => setIsFuelFormOpen(false)} className="h-7 w-7 rounded-full bg-transparent text-zinc-400">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <form onSubmit={handleAddFuel} className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-zinc-400">Vehicle Reg</label>
+                    <input type="text" placeholder="e.g. TX-8902" value={fuelReg} onChange={(e) => setFuelReg(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-zinc-400">Date</label>
+                    <input type="date" value={fuelDate} onChange={(e) => setFuelDate(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-zinc-400">Volume (Liters)</label>
+                    <input type="number" step="any" placeholder="e.g. 50" value={fuelVolume} onChange={(e) => setFuelVolume(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-zinc-400">Total Cost (₹)</label>
+                    <input type="number" step="any" placeholder="e.g. 4500" value={fuelCost} onChange={(e) => setFuelCost(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-zinc-400">MPG / Efficiency</label>
+                    <input type="text" placeholder="e.g. 12 km/l" value={fuelMpg} onChange={(e) => setFuelMpg(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+                  </div>
+                  <div className="md:col-span-5 flex justify-end gap-2 pt-2">
+                    <Button type="submit" size="sm" className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950">Add Fuel Log</Button>
+                  </div>
+                </form>
+              </Card>
+            )}
+
+            {isExpenseFormOpen && (
+              <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-md rounded-xl p-5 space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Log Operating Expense</h3>
+                  <Button variant="ghost" size="icon" onClick={() => setIsExpenseFormOpen(false)} className="h-7 w-7 rounded-full bg-transparent text-zinc-400">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <form onSubmit={handleAddExpense} className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-zinc-400">Vehicle Reg</label>
+                    <input type="text" placeholder="e.g. CA-4412" value={expReg} onChange={(e) => setExpReg(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-zinc-400">Expense Type</label>
+                    <div className="relative">
+                      <select value={expType} onChange={(e) => setExpType(e.target.value)} className="w-full appearance-none px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs">
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Tolls">Tolls</option>
+                        <option value="Insurance">Insurance</option>
+                        <option value="Permits">Permits</option>
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-zinc-400">Description</label>
+                    <input type="text" placeholder="e.g. Brake pad change" value={expDesc} onChange={(e) => setExpDesc(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-zinc-400">Amount (₹)</label>
+                    <input type="number" placeholder="e.g. 1500" value={expAmount} onChange={(e) => setExpAmount(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-zinc-400">Date</label>
+                    <input type="date" value={expDate} onChange={(e) => setExpDate(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+                  </div>
+                  <div className="md:col-span-5 flex justify-end gap-2 pt-2">
+                    <Button type="submit" size="sm" className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-955">Add Expense Log</Button>
+                  </div>
+                </form>
+              </Card>
+            )}
+
+            {/* Separate Blocks for Fuel and Expenses */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Block 1: Fuel Logs */}
+              <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
+                <CardHeader>
+                  <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Fuel Purchase Logbook</CardTitle>
+                  <CardDescription className="text-xs text-zinc-500">Telemetry logs of diesel purchases, quantities, and fuel economy metrics.</CardDescription>
+                </CardHeader>
+                <CardContent className="overflow-x-auto">
+                  <table className="w-full text-left text-sm border-collapse">
+                    <thead>
+                      <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 font-medium text-xs">
+                        <th className="py-2.5 px-3">Vehicle</th>
+                        <th className="py-2.5 px-3">Date</th>
+                        <th className="py-2.5 px-3">Volume</th>
+                        <th className="py-2.5 px-3">Cost</th>
+                        <th className="py-2.5 px-3">Efficiency</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {fuelLogs.map((log) => (
+                        <tr key={log.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 text-zinc-800 dark:text-zinc-200 text-xs">
+                          <td className="py-3 px-3 font-bold">{log.reg}</td>
+                          <td className="py-3 px-3 text-zinc-500">{log.date}</td>
+                          <td className="py-3 px-3 font-semibold">{log.volume}</td>
+                          <td className="py-3 px-3 font-black text-zinc-900 dark:text-zinc-100">{log.cost}</td>
+                          <td className="py-3 px-3 font-mono text-[11px] text-zinc-500">{log.mpg}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+
+              {/* Block 2: Operating Expenses */}
+              <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
+                <CardHeader>
+                  <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Operational Expenses ledger</CardTitle>
+                  <CardDescription className="text-xs text-zinc-500">Record of general operating costs, tolls, permits, and maintenance payouts.</CardDescription>
+                </CardHeader>
+                <CardContent className="overflow-x-auto">
+                  <table className="w-full text-left text-sm border-collapse">
+                    <thead>
+                      <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 font-medium text-xs">
+                        <th className="py-2.5 px-3">Reference</th>
+                        <th className="py-2.5 px-3">Vehicle</th>
+                        <th className="py-2.5 px-3">Type</th>
+                        <th className="py-2.5 px-3">Description</th>
+                        <th className="py-2.5 px-3">Amount</th>
+                        <th className="py-2.5 px-3">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {expenses.map((e) => (
+                        <tr key={e.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 text-zinc-800 dark:text-zinc-200 text-xs">
+                          <td className="py-3 px-3 font-mono text-zinc-500">{e.ref}</td>
+                          <td className="py-3 px-3 font-bold">{e.vehicle}</td>
+                          <td className="py-3 px-3">
+                            <span className="px-2 py-0.5 text-[10px] rounded-full bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
+                              {e.type}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-zinc-500">{e.desc}</td>
+                          <td className="py-3 px-3 font-black text-zinc-900 dark:text-zinc-100">₹{e.amount.toLocaleString()}</td>
+                          <td className="py-3 px-3 text-zinc-400">{e.date}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         )
 
       case 'ROI Reports':
