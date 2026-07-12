@@ -1089,7 +1089,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                                     onClick={() => handleCloseMaint(log.id)}
                                     size="sm"
                                     variant="outline"
-                                    className="h-6 px-2 text-[10px] bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-850 text-zinc-950 dark:text-zinc-950 font-semibold border-zinc-200 dark:border-zinc-800 select-none"
+                                    className="h-6 px-2 text-[10px] bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-850 text-zinc-900 dark:text-zinc-50 font-semibold border-zinc-200 dark:border-zinc-800 select-none"
                                   >
                                     Close Log
                                   </Button>
