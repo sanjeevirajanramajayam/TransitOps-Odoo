@@ -1,4 +1,4 @@
-﻿import prisma from './db'
+import prisma from './db'
 import bcrypt from 'bcryptjs'
 import { UserRole } from '@prisma/client'
 
@@ -6,7 +6,7 @@ const DEMO_USERS = [
   { email: 'fleet@transitops.com',    password: 'demo1234', name: 'Alex Rivera',   role: UserRole.FleetManager },
   { email: 'safety@transitops.com',   password: 'demo1234', name: 'Sarah Connor',  role: UserRole.SafetyOfficer },
   { email: 'finance@transitops.com',  password: 'demo1234', name: 'Priya Patel',   role: UserRole.FinancialAnalyst },
-  { email: 'dispatch@transitops.com', password: 'demo1234', name: 'Marcus Vance',  role: UserRole.Driver },
+  { email: 'dispatch@transitops.com', password: 'demo1234', name: 'Marcus Vance',  role: UserRole.Dispatcher },
 ]
 
 async function seed() {
@@ -18,7 +18,7 @@ async function seed() {
     }
     const hashed = await bcrypt.hash(u.password, 10)
     await prisma.user.create({ data: { email: u.email, password: hashed, name: u.name, role: u.role } })
-    console.log(`[OK]   Created ${u.role} — ${u.email}`)
+    console.log(`[OK]   Created ${u.role} � ${u.email}`)
   }
   console.log('Seed complete.')
   await prisma.$disconnect()
