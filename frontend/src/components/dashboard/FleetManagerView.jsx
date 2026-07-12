@@ -88,7 +88,7 @@ export default function FleetManagerView({ activeSubTab }) {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 p-4 shadow-sm rounded-xl">
-                <div className="flex justify-between items-center text-zinc-400 dark:text-zinc-550">
+                <div className="flex justify-between items-center text-zinc-400 dark:text-zinc-2000">
                   <span className="text-xs uppercase font-bold tracking-wider">Fleet Health Index</span>
                   <Activity className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
                 </div>
@@ -102,7 +102,7 @@ export default function FleetManagerView({ activeSubTab }) {
               </Card>
 
               <Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 p-4 shadow-sm rounded-xl">
-                <div className="flex justify-between items-center text-zinc-400 dark:text-zinc-550">
+                <div className="flex justify-between items-center text-zinc-400 dark:text-zinc-2000">
                   <span className="text-xs uppercase font-bold tracking-wider">Avg Odometer</span>
                   <Truck className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
                 </div>
@@ -114,25 +114,25 @@ export default function FleetManagerView({ activeSubTab }) {
               </Card>
 
               <Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 p-4 shadow-sm rounded-xl">
-                <div className="flex justify-between items-center text-zinc-400 dark:text-zinc-550">
+                <div className="flex justify-between items-center text-zinc-400 dark:text-zinc-2000">
                   <span className="text-xs uppercase font-bold tracking-wider">Active Alerts</span>
                   <ShieldAlert className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
                 </div>
                 <div className="mt-3 flex items-baseline gap-2">
                   <span className="text-3xl font-black text-zinc-900 dark:text-zinc-50">03</span>
-                  <span className="text-xs text-zinc-550 dark:text-zinc-450 font-semibold">issues found</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold">issues found</span>
                 </div>
                 <p className="text-[10px] text-zinc-400 mt-1">Requires immediate dispatch review</p>
               </Card>
 
               <Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 p-4 shadow-sm rounded-xl">
-                <div className="flex justify-between items-center text-zinc-400 dark:text-zinc-550">
+                <div className="flex justify-between items-center text-zinc-400 dark:text-zinc-2000">
                   <span className="text-xs uppercase font-bold tracking-wider">Acquisition ROI</span>
                   <IndianRupee className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
                 </div>
                 <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-zinc-900 dark:text-zinc-55">126%</span>
-                  <span className="text-xs text-zinc-550 dark:text-zinc-450 font-semibold flex items-center">
+                  <span className="text-3xl font-black text-zinc-900 dark:text-zinc-200">126%</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold flex items-center">
                     <TrendingUp className="h-3.5 w-3.5 mr-0.5" /> +4%
                   </span>
                 </div>
@@ -235,7 +235,7 @@ export default function FleetManagerView({ activeSubTab }) {
             <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Fleet Registry</CardTitle>
-                <CardDescription className="text-xs text-zinc-550">Full inventory status, odometer counts, and load limit parameters.</CardDescription>
+                <CardDescription className="text-xs text-zinc-500">Full inventory status, odometer counts, and load limit parameters.</CardDescription>
               </CardHeader>
               <CardContent className="overflow-x-auto">
                 <table className="w-full text-left text-sm border-collapse">
@@ -260,9 +260,9 @@ export default function FleetManagerView({ activeSubTab }) {
                         <td className="py-3.5 px-4">{v.odo}</td>
                         <td className="py-3.5 px-4">
                           <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${
-                            v.status === 'Available' ? 'bg-zinc-50 dark:bg-zinc-900 text-zinc-850 dark:text-zinc-200 border-zinc-200 dark:border-zinc-800' :
-                            v.status === 'On Trip' ? 'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-950 border-zinc-800 dark:border-zinc-200' :
-                            'bg-zinc-100 dark:bg-zinc-850 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
+                            v.status === 'Available' ? 'bg-zinc-50 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 border-zinc-200 dark:border-zinc-800' :
+                            v.status === 'On Trip' ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-800 dark:border-zinc-200' :
+                            'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
                           }`}>
                             {v.status}
                           </span>
@@ -287,13 +287,13 @@ export default function FleetManagerView({ activeSubTab }) {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Telemetry Stream */}
               <div className="lg:col-span-1 space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-450 dark:text-zinc-500">Live Telematics</h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Live Telematics</h3>
                 {trackingVehicles.map((tv) => (
                   <Card key={tv.id} className="p-4 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl space-y-3">
                     <div className="flex justify-between items-start">
                       <div>
                         <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">{tv.id}</h4>
-                        <p className="text-xs text-zinc-550 dark:text-zinc-400">Driver: {tv.driver}</p>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">Driver: {tv.driver}</p>
                       </div>
                       <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300">
                         {tv.status}
@@ -305,7 +305,7 @@ export default function FleetManagerView({ activeSubTab }) {
                         <span>Route Progress</span>
                         <span>{tv.progress}%</span>
                       </div>
-                      <div className="w-full bg-zinc-100 dark:bg-zinc-805 h-2 rounded-full overflow-hidden">
+                      <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
                         <div className="h-full rounded-full bg-zinc-900 dark:bg-zinc-100" style={{ width: `${tv.progress}%` }}></div>
                       </div>
                     </div>
@@ -424,7 +424,7 @@ export default function FleetManagerView({ activeSubTab }) {
                     <tbody>
                       {maintenanceLogs.map((log) => (
                         <tr key={log.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 text-xs text-zinc-800 dark:text-zinc-200">
-                          <td className="py-3 px-3 text-xs font-semibold text-xs text-zinc-955 dark:text-zinc-50 text-xs">{log.id}</td>
+                          <td className="py-3 px-3 text-xs font-semibold text-xs text-zinc-900 dark:text-zinc-50 text-xs">{log.id}</td>
                           <td className="py-3 px-3 text-xs">{log.reg}</td>
                           <td className="py-3 px-3 text-xs">{log.service}</td>
                           <td className="py-3 px-3 text-xs">{log.cost}</td>
@@ -445,9 +445,9 @@ export default function FleetManagerView({ activeSubTab }) {
               <div className="space-y-4">
                 <Card className="p-4 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl space-y-4">
                   <h4 className="font-bold text-xs text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                    <AlertOctagon className="h-4 w-4 text-zinc-450" /> Pending DTC Diagnostics
+                    <AlertOctagon className="h-4 w-4 text-zinc-400" /> Pending DTC Diagnostics
                   </h4>
-                  <p className="text-xs text-zinc-550">Diagnostic Trouble Codes flagged via OBD-II adapters.</p>
+                  <p className="text-xs text-zinc-500">Diagnostic Trouble Codes flagged via OBD-II adapters.</p>
                   
                   <div className="space-y-3">
                     <div className="p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 flex items-start gap-3">
@@ -490,7 +490,7 @@ export default function FleetManagerView({ activeSubTab }) {
               <Card className="lg:col-span-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
                 <CardHeader>
                   <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Recent Fuel Logs</CardTitle>
-                  <CardDescription className="text-xs text-zinc-550">Verified telemetry pump purchases and gas logs.</CardDescription>
+                  <CardDescription className="text-xs text-zinc-500">Verified telemetry pump purchases and gas logs.</CardDescription>
                 </CardHeader>
                 <CardContent className="overflow-x-auto">
                   <table className="w-full text-left text-sm border-collapse">
@@ -523,18 +523,18 @@ export default function FleetManagerView({ activeSubTab }) {
               <div className="space-y-4">
                 <Card className="p-4 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl space-y-4">
                   <h4 className="font-bold text-xs text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                    <Fuel className="h-4 w-4 text-zinc-450" /> Fuel Economy Metrics
+                    <Fuel className="h-4 w-4 text-zinc-400" /> Fuel Economy Metrics
                   </h4>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800 rounded-xl">
-                      <span className="text-[10px] text-zinc-450 uppercase block leading-none">Total Expense</span>
+                      <span className="text-[10px] text-zinc-400 uppercase block leading-none">Total Expense</span>
                       <span className="text-base font-black text-zinc-900 dark:text-zinc-50 block mt-1.5">₹807.30</span>
                     </div>
 
                     <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800 rounded-xl">
-                      <span className="text-[10px] text-zinc-450 uppercase block leading-none">Carbon Offset</span>
-                      <span className="text-base font-black text-zinc-850 dark:text-zinc-100 block mt-1.5">-0.82 tons</span>
+                      <span className="text-[10px] text-zinc-400 uppercase block leading-none">Carbon Offset</span>
+                      <span className="text-base font-black text-zinc-800 dark:text-zinc-100 block mt-1.5">-0.82 tons</span>
                     </div>
                   </div>
                   
@@ -574,7 +574,7 @@ export default function FleetManagerView({ activeSubTab }) {
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-xs text-zinc-900 dark:text-zinc-200">{alert.event}</span>
-                            <span className="px-2.5 py-0.5 text-[9px] font-bold rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-850 text-zinc-750 dark:text-zinc-300">
+                            <span className="px-2.5 py-0.5 text-[9px] font-bold rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-750 dark:text-zinc-300">
                               {alert.severity}
                             </span>
                           </div>
@@ -590,7 +590,7 @@ export default function FleetManagerView({ activeSubTab }) {
               {/* Safety Scoreboard */}
               <Card className="p-4 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl space-y-4">
                 <h4 className="font-bold text-xs text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                  <Users className="h-4 w-4 text-zinc-450" /> Driver Safety Scoreboard
+                  <Users className="h-4 w-4 text-zinc-400" /> Driver Safety Scoreboard
                 </h4>
                 <p className="text-[10px] text-zinc-500">Ranked by compliance score.</p>
                 
@@ -605,7 +605,7 @@ export default function FleetManagerView({ activeSubTab }) {
                   </div>
                   <div className="flex justify-between items-center text-zinc-800 dark:text-zinc-200">
                     <span className="font-medium">3. Marcus Vance</span>
-                    <span className="font-bold text-zinc-900 dark:text-zinc-55">84 / 100</span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-200">84 / 100</span>
                   </div>
                 </div>
               </Card>
@@ -617,7 +617,7 @@ export default function FleetManagerView({ activeSubTab }) {
         return (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-450 dark:text-zinc-550">Compliance & Registrations</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-2000">Compliance & Registrations</h3>
               <Button size="sm" className="h-8 text-sm font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 gap-1.5 select-none">
                 <FileCheck className="h-3.5 w-3.5" /> Renew Registrations
               </Button>
@@ -642,10 +642,10 @@ export default function FleetManagerView({ activeSubTab }) {
                   <tbody>
                     {complianceDocs.map((doc) => (
                       <tr key={doc.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 text-xs text-zinc-800 dark:text-zinc-200">
-                        <td className="py-3 px-3 text-xs font-semibold text-xs text-zinc-955 dark:text-zinc-50 text-xs">{doc.id}</td>
-                        <td className="py-3 px-3 text-xs font-medium text-zinc-900 dark:text-zinc-55 text-xs">{doc.name}</td>
+                        <td className="py-3 px-3 text-xs font-semibold text-xs text-zinc-900 dark:text-zinc-50 text-xs">{doc.id}</td>
+                        <td className="py-3 px-3 text-xs font-medium text-zinc-900 dark:text-zinc-200 text-xs">{doc.name}</td>
                         <td className="py-3 px-3 text-xs">{doc.vehicle}</td>
-                        <td className="py-3 px-3 text-xs text-[10px] text-zinc-555 dark:text-zinc-405">{doc.expiry}</td>
+                        <td className="py-3 px-3 text-xs text-[10px] text-zinc-500 dark:text-zinc-400">{doc.expiry}</td>
                         <td className="py-3 px-3 text-xs">
                           <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                             {doc.status}
@@ -663,7 +663,7 @@ export default function FleetManagerView({ activeSubTab }) {
       case 'Settings':
         return (
           <div className="space-y-6">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-450 dark:text-zinc-500">Fleet Operations Settings</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Fleet Operations Settings</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl p-5 space-y-4">
@@ -673,7 +673,7 @@ export default function FleetManagerView({ activeSubTab }) {
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-zinc-500 block">Speed Alert Boundary (mph)</label>
                     <div className="relative">
-                      <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
+                      <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
                         <option>70 mph</option>
                         <option>75 mph (Recommended)</option>
                         <option>80 mph</option>
@@ -685,7 +685,7 @@ export default function FleetManagerView({ activeSubTab }) {
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-zinc-500 block">Idle Time Trigger Warning</label>
                     <div className="relative">
-                      <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
+                      <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
                         <option>10 minutes</option>
                         <option>15 minutes</option>
                         <option>20 minutes</option>
@@ -697,7 +697,7 @@ export default function FleetManagerView({ activeSubTab }) {
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-zinc-500 block">OBD Telemetry Ping Rate</label>
                     <div className="relative">
-                      <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
+                      <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
                         <option>Every 5 seconds</option>
                         <option>Every 10 seconds</option>
                         <option>Every 30 seconds</option>

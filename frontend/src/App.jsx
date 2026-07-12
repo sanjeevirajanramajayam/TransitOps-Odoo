@@ -103,7 +103,7 @@ export default function App() {
         return (
           <div className="p-8 text-center border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl space-y-3 bg-white dark:bg-zinc-900 shadow-sm">
             <h3 className="text-xl font-bold">Role Selector</h3>
-            <p className="text-zinc-550 dark:text-zinc-450 text-base max-w-xs mx-auto">Please login to access the system.</p>
+            <p className="text-zinc-500 dark:text-zinc-400 text-base max-w-xs mx-auto">Please login to access the system.</p>
           </div>
         )
     }
@@ -134,7 +134,7 @@ export default function App() {
 
           {/* User profile & light/dark mode control */}
           <div className="flex items-center gap-4">
-            <span className="px-2.5 py-0.5 text-[9px] font-bold uppercase rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-400 tracking-wider">
+            <span className="px-2.5 py-0.5 text-[9px] font-bold uppercase rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 tracking-wider">
               {userRole}
             </span>
             
@@ -149,7 +149,7 @@ export default function App() {
                 {userRole ? userRole.split(' ').map(n => n[0]).join('') : 'U'}
               </div>
               <div className="hidden lg:block text-left leading-none space-y-0.5">
-                <span className="text-xs font-bold text-zinc-900 dark:text-zinc-55 block">Raven K.</span>
+                <span className="text-xs font-bold text-zinc-900 dark:text-zinc-200 block">Raven K.</span>
                 <span className="text-[9px] text-zinc-400 block uppercase">Online</span>
               </div>
             </div>
