@@ -406,7 +406,7 @@ export default function DispatcherView({ activeSubTab }) {
             <Button
               onClick={() => { resetForm(); setIsFormOpen(true); }}
               size="sm"
-              className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-955 hover:bg-zinc-800 dark:hover:bg-zinc-200 gap-1.5 border border-zinc-200 dark:border-zinc-800 select-none"
+              className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-zinc-950 dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 gap-1.5 border border-zinc-200 dark:border-zinc-800 select-none"
             >
               <Plus className="h-4 w-4" /> Create Trip
             </Button>
@@ -558,7 +558,7 @@ export default function DispatcherView({ activeSubTab }) {
                   <Button type="button" variant="outline" onClick={resetForm} className="h-9 px-4 text-xs font-semibold rounded-lg border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 bg-transparent">
                     Cancel
                   </Button>
-                  <Button type="submit" className="h-9 px-4 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-955 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 select-none">
+                  <Button type="submit" className="h-9 px-4 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-zinc-950 dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 select-none">
                     <Save className="h-3.5 w-3.5 mr-1" /> {editingTripId ? 'Save Changes' : 'Confirm Dispatch'}
                   </Button>
                 </CardFooter>
@@ -722,7 +722,7 @@ export default function DispatcherView({ activeSubTab }) {
                 <Button type="button" variant="outline" onClick={() => setIsCompleteModalOpen(false)} className="h-9 px-4 text-xs font-semibold rounded-lg border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 bg-transparent">
                   Cancel
                 </Button>
-                <Button type="submit" className="h-9 px-4 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white select-none">
+                <Button type="submit" className="h-9 px-4 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-zinc-950 dark:text-zinc-950 select-none">
                   Record Completion
                 </Button>
               </CardFooter>
