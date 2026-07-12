@@ -1029,7 +1029,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                 <input 
                   type="number" 
                   step="0.1"
-                  value={exchangeRate} 
+                  value={exchangeRate || ''} 
                   onChange={(e) => handleExchangeRateChange(e.target.value)} 
                   className="w-full px-3 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none"
                 />
@@ -1040,7 +1040,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                 <input 
                   type="number" 
                   step="0.1"
-                  value={inflationRate} 
+                  value={inflationRate || ''} 
                   onChange={(e) => handleInflationRateChange(e.target.value)} 
                   className="w-full px-3 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none"
                 />
