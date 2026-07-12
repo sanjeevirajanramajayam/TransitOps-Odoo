@@ -10,19 +10,16 @@ import {
 
 export default function FleetManagerView({ activeSubTab, setActiveTab }) {
   const [vehicles, setVehicles] = useState([])
-  const [driversList, setDriversList] = useState([
-    { id: 1, name: 'Alex Rivera', license: 'CDL-A-9012', expiry: '2027-12-31', contact: '+1 (555) 123-4567', safetyScore: 98, status: 'Available', vehicle: 'TX-8902', img: '/driver1.png', email: 'alex.r@transitops.com' },
-    { id: 2, name: 'Priya Patel', license: 'CDL-A-7019', expiry: '2028-04-15', contact: '+1 (555) 987-6543', safetyScore: 95, status: 'On Trip', vehicle: 'CA-4412', img: '/driver2.png', email: 'priya.p@transitops.com' },
-    { id: 3, name: 'Marcus Vance', license: 'CDL-B-2211', expiry: '2027-09-20', contact: '+1 (555) 234-5678', safetyScore: 82, status: 'Suspended', vehicle: 'None', img: '/driver3.png', email: 'marcus.v@transitops.com' },
-    { id: 4, name: 'Sarah Connor', license: 'CDL-A-3388', expiry: '2026-08-01', contact: '+1 (555) 345-6789', safetyScore: 91, status: 'Available', vehicle: 'FL-7711', img: '/driver2.png', email: 'sarah.c@transitops.com' }
-  ])
+  const [driversList, setDriversList] = useState([])
 
   // New vehicle & driver form states
   const [newVehicle, setNewVehicle] = useState({ reg: '', model: '', type: 'Van', cap: '', odo: '', cost: '', status: 'Available' })
-  const [newDriver, setNewDriver] = useState({ name: '', license: '', expiry: '', contact: '', safetyScore: 95, status: 'Available', vehicle: 'None', email: '' })
+  const [newDriver, setNewDriver] = useState({ name: '', license: '', category: 'Class A', expiry: '', contact: '', email: '' })
 
   const [vehicleFormError, setVehicleFormError] = useState('')
+  const [driverFormError, setDriverFormError] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
+  const [driverFieldErrors, setDriverFieldErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
 
   const fetchVehicles = async () => {
@@ -51,6 +48,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
 
   useEffect(() => {
     fetchVehicles()
+    fetchDrivers()
   }, [])
 
   // Dispatch form states
@@ -208,13 +206,92 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
     }
   }
 
-  const handleDriverSubmit = (e) => {
+  const fetchDrivers = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/v1/drivers')
+      const data = await res.json()
+      if (data.success) {
+        const mapped = data.data.map((d, i) => ({
+          id: d.id,
+          name: d.name,
+          license: d.licenseNumber,
+          expiry: d.licenseExpiryDate?.split('T')[0] ?? '',
+          contact: d.contactNumber,
+          safetyScore: d.safetyScore ?? 100,
+          status: d.status === 'OnTrip' ? 'On Trip' : d.status,
+          vehicle: 'None',
+          email: d.email ?? '',
+          img: `/driver${(i % 3) + 1}.png`
+        }))
+        setDriversList(mapped)
+      }
+    } catch (err) {
+      console.error('Failed to fetch drivers', err)
+    }
+  }
+
+  const handleDriverSubmit = async (e) => {
     e.preventDefault()
-    const id = driversList.length + 1
-    const img = `/driver${(id % 3) + 1}.png`
-    setDriversList([...driversList, { id, img, ...newDriver }])
-    setNewDriver({ name: '', license: '', expiry: '', contact: '', safetyScore: 95, status: 'Available', vehicle: 'None', email: '' })
-    setActiveTab('Drivers')
+    setDriverFormError('')
+    setDriverFieldErrors({})
+
+    const errors = {}
+
+    const nameClean = newDriver.name.trim()
+    if (!nameClean || nameClean.length < 2) errors.name = 'Full name must be at least 2 characters'
+
+    const licenseClean = newDriver.license.trim().toUpperCase()
+    if (!licenseClean || licenseClean.length < 2) errors.license = 'License number is required'
+
+    if (!newDriver.category) errors.category = 'License category is required'
+
+    if (!newDriver.expiry) {
+      errors.expiry = 'Expiry date is required'
+    } else {
+      const expiryDate = new Date(newDriver.expiry)
+      if (isNaN(expiryDate.getTime())) errors.expiry = 'Invalid date format'
+    }
+
+    const contactClean = newDriver.contact.trim()
+    if (!contactClean || contactClean.length < 5) errors.contact = 'Contact number must be at least 5 characters'
+
+    if (Object.keys(errors).length > 0) {
+      setDriverFieldErrors(errors)
+      return
+    }
+
+    try {
+      const payload = {
+        name: nameClean,
+        licenseNumber: licenseClean,
+        licenseCategory: newDriver.category,
+        licenseExpiryDate: new Date(newDriver.expiry).toISOString(),
+        contactNumber: contactClean
+      }
+      if (newDriver.email?.trim()) payload.email = newDriver.email.trim()
+
+      const res = await fetch('http://localhost:5000/api/v1/drivers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+
+      const data = await res.json()
+      if (res.status === 201) {
+        setNewDriver({ name: '', license: '', category: 'Class A', expiry: '', contact: '', email: '' })
+        fetchDrivers()
+        setActiveTab('Drivers')
+      } else if (res.status === 422 && data.data?.errors) {
+        const apiErrors = {}
+        data.data.errors.forEach(err => { apiErrors[err.field] = err.message })
+        setDriverFieldErrors(apiErrors)
+        setDriverFormError('Validation failed. Please check the inputs.')
+      } else {
+        setDriverFormError(data.message || 'Failed to register driver')
+      }
+    } catch (err) {
+      setDriverFormError('Network error: Failed to reach the server')
+    }
   }
 
   const handleDispatch = (e) => {
@@ -1206,6 +1283,13 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
               </div>
             </div>
 
+            {driverFormError && (
+              <div className="p-3.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/50 rounded-xl flex gap-2.5 text-xs text-red-700 dark:text-red-400">
+                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>{driverFormError}</span>
+              </div>
+            )}
+
             <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
               <form onSubmit={handleDriverSubmit}>
                 <CardContent className="p-6 space-y-4">
@@ -1218,8 +1302,9 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                         placeholder="e.g. Sarah Connor" 
                         value={newDriver.name}
                         onChange={(e) => setNewDriver({...newDriver, name: e.target.value})}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        className={`w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border ${driverFieldErrors.name ? 'border-red-500' : 'border-zinc-200 dark:border-zinc-800'} rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none`}
                       />
+                      {driverFieldErrors.name && <p className="text-[10px] text-red-500 font-medium">{driverFieldErrors.name}</p>}
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs uppercase font-bold text-zinc-400">CDL License Number</label>
@@ -1229,12 +1314,30 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                         placeholder="e.g. CDL-A-3388" 
                         value={newDriver.license}
                         onChange={(e) => setNewDriver({...newDriver, license: e.target.value})}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        className={`w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border ${driverFieldErrors.license || driverFieldErrors.licenseNumber ? 'border-red-500' : 'border-zinc-200 dark:border-zinc-800'} rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none`}
                       />
+                      {(driverFieldErrors.license || driverFieldErrors.licenseNumber) && <p className="text-[10px] text-red-500 font-medium">{driverFieldErrors.license || driverFieldErrors.licenseNumber}</p>}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-zinc-400">License Category</label>
+                      <div className="relative">
+                        <select 
+                          value={newDriver.category}
+                          onChange={(e) => setNewDriver({...newDriver, category: e.target.value})}
+                          className={`w-full appearance-none pl-3 pr-8 py-2 bg-white dark:bg-zinc-900 border ${driverFieldErrors.category || driverFieldErrors.licenseCategory ? 'border-red-500' : 'border-zinc-200 dark:border-zinc-800'} rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none`}
+                        >
+                          <option value="Class A">Class A — Heavy Combination</option>
+                          <option value="Class B">Class B — Single Vehicle</option>
+                          <option value="Class C">Class C — Passenger/Hazmat</option>
+                          <option value="Class D">Class D — Non-Commercial</option>
+                        </select>
+                        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                      </div>
+                      {(driverFieldErrors.category || driverFieldErrors.licenseCategory) && <p className="text-[10px] text-red-500 font-medium">{driverFieldErrors.category || driverFieldErrors.licenseCategory}</p>}
+                    </div>
                     <div className="space-y-1">
                       <label className="text-xs uppercase font-bold text-zinc-400">License Expiration Date</label>
                       <input 
@@ -1242,9 +1345,13 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                         required
                         value={newDriver.expiry}
                         onChange={(e) => setNewDriver({...newDriver, expiry: e.target.value})}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        className={`w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border ${driverFieldErrors.expiry || driverFieldErrors.licenseExpiryDate ? 'border-red-500' : 'border-zinc-200 dark:border-zinc-800'} rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none`}
                       />
+                      {(driverFieldErrors.expiry || driverFieldErrors.licenseExpiryDate) && <p className="text-[10px] text-red-500 font-medium">{driverFieldErrors.expiry || driverFieldErrors.licenseExpiryDate}</p>}
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-xs uppercase font-bold text-zinc-400">Contact Number</label>
                       <input 
@@ -1253,37 +1360,19 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                         placeholder="e.g. +1 (555) 345-6789" 
                         value={newDriver.contact}
                         onChange={(e) => setNewDriver({...newDriver, contact: e.target.value})}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        className={`w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border ${driverFieldErrors.contact || driverFieldErrors.contactNumber ? 'border-red-500' : 'border-zinc-200 dark:border-zinc-800'} rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none`}
                       />
+                      {(driverFieldErrors.contact || driverFieldErrors.contactNumber) && <p className="text-[10px] text-red-500 font-medium">{driverFieldErrors.contact || driverFieldErrors.contactNumber}</p>}
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-xs uppercase font-bold text-zinc-400">Email Address</label>
+                      <label className="text-xs uppercase font-bold text-zinc-400">Email Address <span className="text-zinc-400 font-normal normal-case">(optional)</span></label>
                       <input 
-                        type="email" 
-                        required
+                        type="email"
                         placeholder="e.g. sarah.c@transitops.com" 
                         value={newDriver.email}
                         onChange={(e) => setNewDriver({...newDriver, email: e.target.value})}
                         className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
                       />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs uppercase font-bold text-zinc-400">Status</label>
-                      <div className="relative">
-                        <select 
-                          value={newDriver.status}
-                          onChange={(e) => setNewDriver({...newDriver, status: e.target.value})}
-                          className="w-full appearance-none pl-3 pr-8 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
-                        >
-                          <option value="Available">Available</option>
-                          <option value="On Trip">On Trip</option>
-                          <option value="Suspended">Suspended</option>
-                        </select>
-                        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
-                      </div>
                     </div>
                   </div>
                 </CardContent>
