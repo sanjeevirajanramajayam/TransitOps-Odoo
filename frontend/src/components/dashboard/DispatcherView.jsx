@@ -118,21 +118,43 @@ export default function DispatcherView({ activeSubTab }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         })
+        const data = await res.json()
+        if (res.ok) {
+          setSuccess('Trip details successfully updated!')
+          resetForm()
+          fetchData()
+        } else {
+          setError(data.message || 'Failed to submit trip')
+        }
       } else {
+        // Create trip (created in Draft state)
         res = await fetch('http://localhost:5000/api/v1/trips', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         })
-      }
-
-      const data = await res.json()
-      if (res.ok) {
-        setSuccess(editingTripId ? 'Trip details successfully updated!' : 'New trip successfully created in Draft status!')
-        resetForm()
-        fetchData()
-      } else {
-        setError(data.message || 'Failed to submit trip')
+        const data = await res.json()
+        if (res.ok) {
+          const tripId = data.data.id
+          // Immediately auto-dispatch the trip
+          const dispatchRes = await fetch(`http://localhost:5000/api/v1/trips/${tripId}/dispatch`, {
+            method: 'POST'
+          })
+          const dispatchData = await dispatchRes.json()
+          if (dispatchRes.ok) {
+            setSuccess('Trip successfully created and dispatched!')
+            resetForm()
+            fetchData()
+          } else {
+            // If dispatch fails, delete the draft trip to avoid lingering draft trips
+            await fetch(`http://localhost:5000/api/v1/trips/${tripId}`, {
+              method: 'DELETE'
+            })
+            setError(dispatchData.message || 'Failed to dispatch trip')
+          }
+        } else {
+          setError(data.message || 'Failed to submit trip')
+        }
       }
     } catch (err) {
       setError('Network error: Could not reach the server')
@@ -544,12 +566,12 @@ export default function DispatcherView({ activeSubTab }) {
                     <tr>
                       <td colSpan={6} className="py-8 text-center text-xs text-zinc-400">Loading trips logged...</td>
                     </tr>
-                  ) : trips.length === 0 ? (
+                  ) : trips.filter(trip => trip.status !== 'Draft').length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-xs text-zinc-400">No trips logged.</td>
+                      <td colSpan={6} className="py-8 text-center text-xs text-zinc-400">No active or completed trips logged.</td>
                     </tr>
                   ) : (
-                    trips.map((trip) => {
+                    trips.filter(trip => trip.status !== 'Draft').map((trip) => {
                       const veh = vehicles.find(v => v.id === trip.vehicleId)
                       const drv = drivers.find(d => d.id === trip.driverId)
                       return (
@@ -569,45 +591,6 @@ export default function DispatcherView({ activeSubTab }) {
                           </td>
                           <td className="py-3.5 px-4 text-right">
                             <div className="flex justify-end items-center gap-1.5">
-                              {trip.status === 'Draft' && (
-                                <>
-                                  <Button
-                                    onClick={() => handleDispatch(trip.id)}
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-7 px-2.5 text-[10px] border-zinc-200 dark:border-zinc-800 bg-transparent text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 select-none flex items-center gap-1"
-                                  >
-                                    <Play className="h-3 w-3 text-indigo-500" /> Dispatch
-                                  </Button>
-                                  <Button
-                                    onClick={() => handleEdit(trip)}
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent"
-                                  >
-                                    <Edit2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                  <Button
-                                    onClick={() => handleCancel(trip.id)}
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7 rounded-lg text-amber-500 hover:text-amber-600 bg-transparent"
-                                    title="Cancel Trip"
-                                  >
-                                    <Ban className="h-3.5 w-3.5" />
-                                  </Button>
-                                  <Button
-                                    onClick={() => handleDelete(trip.id)}
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 bg-transparent"
-                                    title="Delete Trip"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </>
-                              )}
-
                               {trip.status === 'Dispatched' && (
                                 <>
                                   <Button
