@@ -93,8 +93,12 @@ app.get('/api/error-test', (req: Request, res: Response, next: NextFunction) => 
 // Global Error Handler Middleware
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  logger.info(`Server is running on http://localhost:${PORT}`, {
-    port: PORT,
+export { app };
+
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    logger.info(`Server is running on http://localhost:${PORT}`, {
+      port: PORT,
+    });
   });
-});
+}
