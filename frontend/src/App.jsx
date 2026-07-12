@@ -33,6 +33,7 @@ export default function App() {
         return [
           { name: 'Overview', icon: BarChart3 },
           { name: 'Vehicles', icon: Truck },
+          { name: 'Drivers', icon: Users },
           { name: 'Tracking & GPS', icon: MapPin },
           { name: 'Maintenance', icon: Wrench },
           { name: 'Fuel & Costs', icon: Fuel },
