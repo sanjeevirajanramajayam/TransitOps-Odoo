@@ -47,7 +47,6 @@ model TransitDriver {
   safetyScore       Float           @map("safety_score")
   status            DriverStatus    @default(Available)
   email             String?         @unique
-  transit_alert     transit_alert[]
   trips             TransitTrip[]
   alerts            TransitAlert[]
 
@@ -127,21 +126,6 @@ model TransitDocument {
   @@map("transit_document")
 }
 
-model transit_alert {
-  id             Int            @id @default(autoincrement())
-  driver_id      Int?
-  driver_name    String?
-  type           String
-  description    String
-  severity       AlertSeverity  @default(medium)
-  is_dismissed   Boolean        @default(false)
-  created_at     DateTime       @default(now())
-  transit_driver TransitDriver? @relation(fields: [driver_id], references: [id])
-
-  @@index([driver_id])
-  @@index([is_dismissed])
-}
-
 view VehicleAnalytics {
   id                   Int    @unique
   registrationNumber   String @map("registration_number")
@@ -192,12 +176,6 @@ enum TripStatus {
 enum MaintenanceStatus {
   Active
   Closed
-}
-
-enum AlertSeverity {
-  low
-  medium
-  high
 }
 
 enum AlertSeverity {
