@@ -24,7 +24,7 @@ export default function SafetyOfficerView({ activeSubTab }) {
         })))
       }
 
-      const aRes = await fetch('http://localhost:5000/api/v1/alerts')
+      const aRes = await fetch('http://localhost:5000/api/v1/alerts/active')
       const aJson = await aRes.json()
       if (aJson.success) {
         setAlerts(aJson.data.map(a => ({
