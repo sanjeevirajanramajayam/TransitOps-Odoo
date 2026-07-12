@@ -16,7 +16,7 @@ import {
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [user, setUser] = useState(null)
-  const [activeTab, setActiveTab] = useState('Overview')
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('activeTab') || 'Overview')
   const [darkMode, setDarkMode] = useState(true)
 
   // Sync dark class on mount and whenever darkMode state changes
@@ -28,14 +28,24 @@ export default function App() {
     }
   }, [darkMode])
 
+  // Sync activeTab to localStorage
+  useEffect(() => {
+    localStorage.setItem('activeTab', activeTab)
+  }, [activeTab])
+
   // Rehydrate session from localStorage on mount
   useEffect(() => {
     const session = getSession()
     if (session?.token && session?.user) {
       setUser(session.user)
       setIsLoggedIn(true)
+      const savedTab = localStorage.getItem('activeTab')
       const items = getSidebarItems(session.user.role)
-      if (items.length > 0) setActiveTab(items[0].name)
+      if (savedTab && items.some(item => item.name === savedTab)) {
+        setActiveTab(savedTab)
+      } else if (items.length > 0) {
+        setActiveTab(items[0].name)
+      }
     }
   }, [])
 
@@ -89,6 +99,7 @@ export default function App() {
     setIsLoggedIn(false)
     setUser(null)
     setActiveTab('Overview')
+    localStorage.removeItem('activeTab')
   }
 
   const toggleDarkMode = () => {
