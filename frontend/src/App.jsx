@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import LoginPage from './components/auth/LoginPage'
 import FleetManagerView from './components/dashboard/FleetManagerView'
-import DriverView from './components/dashboard/DriverView'
+import DispatcherView from './components/dashboard/DispatcherView'
 import SafetyOfficerView from './components/dashboard/SafetyOfficerView'
 import FinancialAnalystView from './components/dashboard/FinancialAnalystView'
 import { Button } from '@/components/ui/button'
@@ -34,7 +34,6 @@ export default function App() {
           { name: 'Overview', icon: BarChart3 },
           { name: 'Vehicles', icon: Truck },
           { name: 'Drivers', icon: Users },
-          { name: 'Trip', icon: Route },
           { name: 'Tracking & GPS', icon: MapPin },
           { name: 'Maintenance', icon: Wrench },
           { name: 'Fuel & Costs', icon: Fuel },
@@ -42,11 +41,10 @@ export default function App() {
           { name: 'Compliance & Docs', icon: FileCheck },
           { name: 'Settings', icon: Settings }
         ]
-      case 'Driver':
+      case 'Dispatcher':
         return [
-          { name: 'Active Dispatches', icon: Route },
-          { name: 'Safety Performance', icon: ShieldCheck },
-          { name: 'My Logs', icon: Clock },
+          { name: 'Fleet', icon: Truck },
+          { name: 'Trips', icon: Route },
           { name: 'Settings', icon: Settings }
         ]
       case 'Safety Officer':
@@ -95,8 +93,8 @@ export default function App() {
     switch (userRole) {
       case 'Fleet Manager':
         return <FleetManagerView activeSubTab={activeTab} setActiveTab={setActiveTab} />
-      case 'Driver':
-        return <DriverView activeSubTab={activeTab} />
+      case 'Dispatcher':
+        return <DispatcherView activeSubTab={activeTab} />
       case 'Safety Officer':
         return <SafetyOfficerView activeSubTab={activeTab} />
       case 'Financial Analyst':
