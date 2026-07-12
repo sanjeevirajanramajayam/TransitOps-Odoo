@@ -5,7 +5,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, L
 import {
   Truck, Wrench, ShieldAlert, Plus, Calendar, Settings,
   MapPin, Fuel, FileCheck, Activity,
-  TrendingUp, Users, IndianRupee, AlertOctagon, Search, Map, ChevronDown, ArrowLeft, Route, AlertTriangle, CheckCircle, Clock
+  TrendingUp, Users, IndianRupee, AlertOctagon, Search, Map, ChevronDown, ArrowLeft, Route, AlertTriangle, CheckCircle, Clock, X
 } from 'lucide-react'
 
 export default function FleetManagerView({ activeSubTab, setActiveTab }) {
