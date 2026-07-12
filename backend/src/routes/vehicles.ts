@@ -1,7 +1,9 @@
-import { Router, Request, Response } from 'express'
+import { Router, Request, Response, NextFunction } from 'express'
 import { z } from 'zod'
 import { validateRequest } from '../middleware/validate'
 import { sendResponse } from '../utils/response'
+import prisma from '../db'
+import { VehicleStatus } from '@prisma/client'
 
 const router = Router()
 
@@ -14,60 +16,89 @@ const createVehicleSchema = z.object({
   acquisitionCost: z.number().positive()
 })
 
-const updateVehicleSchema = createVehicleSchema.partial()
-
-router.get('/', (req: Request, res: Response) => {
-  return sendResponse(res, 200, true, 'Vehicles retrieved successfully', [
-    { id: 1, registrationNumber: 'TX-8902', modelName: 'Ford Transit', vehicleType: 'Van', maxLoadCapacity: 3500, currentOdometer: 45200, acquisitionCost: 35000, status: 'Available' },
-    { id: 2, registrationNumber: 'CA-4412', modelName: 'Freightliner M2', vehicleType: 'Truck', maxLoadCapacity: 15000, currentOdometer: 120400, acquisitionCost: 85000, status: 'On Trip' }
-  ])
+const updateVehicleSchema = createVehicleSchema.partial().extend({
+  status: z.nativeEnum(VehicleStatus).optional()
 })
 
-router.get('/:id', (req: Request, res: Response) => {
-  const { id } = req.params
-  return sendResponse(res, 200, true, 'Vehicle retrieved successfully', {
-    id: parseInt(id as string) || 1,
-    registrationNumber: 'TX-8902',
-    modelName: 'Ford Transit',
-    vehicleType: 'Van',
-    maxLoadCapacity: 3500,
-    currentOdometer: 45200,
-    acquisitionCost: 35000,
-    status: 'Available'
-  })
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { status, vehicle_type, search } = req.query
+
+    const where: any = {}
+
+    if (status) {
+      where.status = status as VehicleStatus
+    }
+
+    if (vehicle_type) {
+      where.vehicleType = vehicle_type as string
+    }
+
+    if (search) {
+      where.OR = [
+        { registrationNumber: { contains: search as string, mode: 'insensitive' } },
+        { modelName: { contains: search as string, mode: 'insensitive' } }
+      ]
+    }
+
+    const vehicles = await prisma.transitVehicle.findMany({
+      where,
+      orderBy: { id: 'asc' }
+    })
+
+    return sendResponse(res, 200, true, 'Vehicles retrieved successfully', vehicles)
+  } catch (err) {
+    next(err)
+  }
 })
 
-router.post('/', validateRequest(createVehicleSchema), (req: Request, res: Response) => {
-  const data = req.body
-  return sendResponse(res, 201, true, 'Vehicle registered successfully', {
-    id: 3,
-    ...data,
-    status: 'Available'
-  })
+router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params
+    const vehicle = await prisma.transitVehicle.findUniqueOrThrow({
+      where: { id: parseInt(id as string) }
+    })
+    return sendResponse(res, 200, true, 'Vehicle retrieved successfully', vehicle)
+  } catch (err) {
+    next(err)
+  }
 })
 
-router.put('/:id', validateRequest(updateVehicleSchema), (req: Request, res: Response) => {
-  const { id } = req.params
-  const data = req.body
-  return sendResponse(res, 200, true, 'Vehicle updated successfully', {
-    id: parseInt(id as string) || 1,
-    registrationNumber: 'TX-8902',
-    modelName: 'Ford Transit',
-    vehicleType: 'Van',
-    maxLoadCapacity: 3500,
-    currentOdometer: 45200,
-    acquisitionCost: 35000,
-    status: 'Available',
-    ...data
-  })
+router.post('/', validateRequest(createVehicleSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const vehicle = await prisma.transitVehicle.create({
+      data: req.body
+    })
+    return sendResponse(res, 201, true, 'Vehicle registered successfully', vehicle)
+  } catch (err) {
+    next(err)
+  }
 })
 
-router.delete('/:id', (req: Request, res: Response) => {
-  const { id } = req.params
-  return sendResponse(res, 200, true, `Vehicle ${id} retired successfully`, {
-    id: parseInt(id as string) || 1,
-    status: 'Retired'
-  })
+router.put('/:id', validateRequest(updateVehicleSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params
+    const vehicle = await prisma.transitVehicle.update({
+      where: { id: parseInt(id as string) },
+      data: req.body
+    })
+    return sendResponse(res, 200, true, 'Vehicle updated successfully', vehicle)
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params
+    const vehicle = await prisma.transitVehicle.update({
+      where: { id: parseInt(id as string) },
+      data: { status: VehicleStatus.Retired }
+    })
+    return sendResponse(res, 200, true, `Vehicle ${id} retired successfully`, vehicle)
+  } catch (err) {
+    next(err)
+  }
 })
 
 export default router

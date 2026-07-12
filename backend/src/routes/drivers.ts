@@ -1,7 +1,9 @@
-import { Router, Request, Response } from 'express'
+import { Router, Request, Response, NextFunction } from 'express'
 import { z } from 'zod'
 import { validateRequest } from '../middleware/validate'
 import { sendResponse } from '../utils/response'
+import prisma from '../db'
+import { DriverStatus } from '@prisma/client'
 
 const router = Router()
 
@@ -14,54 +16,89 @@ const createDriverSchema = z.object({
 })
 
 const updateDriverSchema = createDriverSchema.partial().extend({
-  safetyScore: z.number().min(0).max(100).optional()
+  safetyScore: z.number().min(0).max(100).optional(),
+  status: z.nativeEnum(DriverStatus).optional()
 })
 
-router.get('/', (req: Request, res: Response) => {
-  return sendResponse(res, 200, true, 'Drivers retrieved successfully', [
-    { id: 1, name: 'Alex Rivera', licenseNumber: 'CDL-A-9012', licenseCategory: 'Class A', licenseExpiryDate: '2027-12-31T00:00:00.000Z', contactNumber: '+1 (555) 123-4567', safetyScore: 98, status: 'Available' },
-    { id: 2, name: 'Priya Patel', licenseNumber: 'CDL-A-7019', licenseCategory: 'Class A', licenseExpiryDate: '2028-04-15T00:00:00.000Z', contactNumber: '+1 (555) 987-6543', safetyScore: 95, status: 'On Trip' }
-  ])
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { status, license_category, search } = req.query
+
+    const where: any = {}
+
+    if (status) {
+      where.status = status as DriverStatus
+    }
+
+    if (license_category) {
+      where.licenseCategory = license_category as string
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search as string, mode: 'insensitive' } },
+        { licenseNumber: { contains: search as string, mode: 'insensitive' } }
+      ]
+    }
+
+    const drivers = await prisma.transitDriver.findMany({
+      where,
+      orderBy: { id: 'asc' }
+    })
+
+    return sendResponse(res, 200, true, 'Drivers retrieved successfully', drivers)
+  } catch (err) {
+    next(err)
+  }
 })
 
-router.get('/:id', (req: Request, res: Response) => {
-  const { id } = req.params
-  return sendResponse(res, 200, true, 'Driver retrieved successfully', {
-    id: parseInt(id as string) || 1,
-    name: 'Alex Rivera',
-    licenseNumber: 'CDL-A-9012',
-    licenseCategory: 'Class A',
-    licenseExpiryDate: '2027-12-31T00:00:00.000Z',
-    contactNumber: '+1 (555) 123-4567',
-    safetyScore: 98,
-    status: 'Available'
-  })
+router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params
+    const driver = await prisma.transitDriver.findUniqueOrThrow({
+      where: { id: parseInt(id as string) }
+    })
+    return sendResponse(res, 200, true, 'Driver retrieved successfully', driver)
+  } catch (err) {
+    next(err)
+  }
 })
 
-router.post('/', validateRequest(createDriverSchema), (req: Request, res: Response) => {
-  const data = req.body
-  return sendResponse(res, 201, true, 'Driver registered successfully', {
-    id: 3,
-    ...data,
-    safetyScore: 100,
-    status: 'Available'
-  })
+router.post('/', validateRequest(createDriverSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { name, licenseNumber, licenseCategory, licenseExpiryDate, contactNumber } = req.body
+    const driver = await prisma.transitDriver.create({
+      data: {
+        name,
+        licenseNumber,
+        licenseCategory,
+        licenseExpiryDate: new Date(licenseExpiryDate),
+        contactNumber,
+        safetyScore: 100
+      }
+    })
+    return sendResponse(res, 201, true, 'Driver registered successfully', driver)
+  } catch (err) {
+    next(err)
+  }
 })
 
-router.put('/:id', validateRequest(updateDriverSchema), (req: Request, res: Response) => {
-  const { id } = req.params
-  const data = req.body
-  return sendResponse(res, 200, true, 'Driver updated successfully', {
-    id: parseInt(id as string) || 1,
-    name: 'Alex Rivera',
-    licenseNumber: 'CDL-A-9012',
-    licenseCategory: 'Class A',
-    licenseExpiryDate: '2027-12-31T00:00:00.000Z',
-    contactNumber: '+1 (555) 123-4567',
-    safetyScore: 98,
-    status: 'Available',
-    ...data
-  })
+router.put('/:id', validateRequest(updateDriverSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params
+    const updateData = { ...req.body }
+    if (updateData.licenseExpiryDate) {
+      updateData.licenseExpiryDate = new Date(updateData.licenseExpiryDate)
+    }
+
+    const driver = await prisma.transitDriver.update({
+      where: { id: parseInt(id as string) },
+      data: updateData
+    })
+    return sendResponse(res, 200, true, 'Driver updated successfully', driver)
+  } catch (err) {
+    next(err)
+  }
 })
 
 export default router
