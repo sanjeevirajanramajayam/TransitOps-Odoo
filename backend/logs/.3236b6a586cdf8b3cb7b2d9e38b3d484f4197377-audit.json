@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "C:\\Users\\Mithul Varshan\\Desktop\\oodo-2k26\\TransitOps-Odoo\\backend\\logs\\.3236b6a586cdf8b3cb7b2d9e38b3d484f4197377-audit.json",
+    "files": [
+        {
+            "date": 1783839762939,
+            "name": "C:\\Users\\Mithul Varshan\\Desktop\\oodo-2k26\\TransitOps-Odoo\\backend\\logs\\error-2026-07-12.log",
+            "hash": "030ee923b6670a87ca1076e76faa746297be49e83f8ad03b25d8486cba916bc9"
+        }
+    ],
+    "hashType": "sha256"
+}
