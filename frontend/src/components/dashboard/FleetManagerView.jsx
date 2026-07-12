@@ -232,52 +232,71 @@ export default function FleetManagerView({ activeSubTab }) {
               </div>
             </div>
 
-            <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Fleet Registry</CardTitle>
-                <CardDescription className="text-xs text-zinc-500">Full inventory status, odometer counts, and load limit parameters.</CardDescription>
-              </CardHeader>
-              <CardContent className="overflow-x-auto">
-                <table className="w-full text-left text-sm border-collapse">
-                  <thead>
-                    <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 font-medium text-xs">
-                      <th className="py-3 px-4">Registration</th>
-                      <th className="py-3 px-4">Model</th>
-                      <th className="py-3 px-4">Type</th>
-                      <th className="py-3 px-4">Max Capacity</th>
-                      <th className="py-3 px-4">Odometer</th>
-                      <th className="py-3 px-4">Status</th>
-                      <th className="py-3 px-4">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredVehicles.map((v) => (
-                      <tr key={v.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 text-xs text-zinc-800 dark:text-zinc-200">
-                        <td className="py-3.5 px-4 font-semibold text-zinc-950 dark:text-zinc-50 text-xs">{v.reg}</td>
-                        <td className="py-3.5 px-4">{v.model}</td>
-                        <td className="py-3.5 px-4">{v.type}</td>
-                        <td className="py-3.5 px-4">{v.cap}</td>
-                        <td className="py-3.5 px-4">{v.odo}</td>
-                        <td className="py-3.5 px-4">
-                          <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${
-                            v.status === 'Available' ? 'bg-zinc-50 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 border-zinc-200 dark:border-zinc-800' :
-                            v.status === 'On Trip' ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-800 dark:border-zinc-200' :
-                            'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
-                          }`}>
-                            {v.status}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredVehicles.map((v) => {
+                let imgUrl = '/van.png';
+                if (v.type === 'Van') imgUrl = '/van.png';
+                else if (v.type === 'Truck') imgUrl = '/truck.png';
+                else if (v.type === 'Semi') imgUrl = '/semi.png';
+                else if (v.type === 'Box Truck') imgUrl = '/box_truck.png';
+
+                return (
+                  <Card key={v.id} className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl overflow-hidden flex flex-col justify-between group hover:border-zinc-400 dark:hover:border-zinc-700 transition-colors duration-200">
+                    <div>
+                      {/* Vehicle Image */}
+                      <div className="h-40 w-full overflow-hidden bg-zinc-50 dark:bg-zinc-950/60 relative border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-center p-4">
+                        <img 
+                          src={imgUrl} 
+                          alt={v.model} 
+                          className="h-full w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <span className={`absolute top-3 right-3 px-2.5 py-0.5 text-[9px] font-bold uppercase rounded-full border ${
+                          v.status === 'Available' ? 'bg-zinc-50/90 dark:bg-zinc-900/95 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-850' :
+                          v.status === 'On Trip' ? 'bg-zinc-900/95 dark:bg-zinc-100/95 text-white dark:text-zinc-900 border-zinc-800 dark:border-zinc-200' :
+                          'bg-zinc-100/90 dark:bg-zinc-800/90 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
+                        }`}>
+                          {v.status}
+                        </span>
+                      </div>
+
+                      {/* Card Info */}
+                      <div className="p-4 space-y-3.5">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">{v.model}</h4>
+                            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">{v.type}</p>
+                          </div>
+                          <span className="px-2.5 py-1 text-[10px] font-mono font-bold bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-lg">
+                            {v.reg}
                           </span>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <Button variant="ghost" size="sm" className="h-8 px-2 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent">
-                            <Settings className="h-4 w-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </CardContent>
-            </Card>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 pt-1 text-xs border-t border-zinc-100 dark:border-zinc-800/80">
+                          <div>
+                            <span className="text-zinc-400 block uppercase tracking-wider text-[8px] font-bold">Max Capacity</span>
+                            <span className="font-semibold text-zinc-700 dark:text-zinc-300 text-xs">{v.cap}</span>
+                          </div>
+                          <div>
+                            <span className="text-zinc-400 block uppercase tracking-wider text-[8px] font-bold">Odometer</span>
+                            <span className="font-semibold text-zinc-700 dark:text-zinc-300 text-xs">{v.odo}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="px-4 pb-4 pt-1 flex gap-2">
+                      <Button variant="outline" className="w-full text-xs font-semibold h-8 rounded-lg border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 select-none bg-transparent">
+                        View Details
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent shrink-0">
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </Card>
+                )
+              })}
+            </div>
           </div>
         )
 
