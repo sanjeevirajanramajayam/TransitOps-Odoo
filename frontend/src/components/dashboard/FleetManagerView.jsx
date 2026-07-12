@@ -14,11 +14,15 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
   const [driversList, setDriversList] = useState([])
   const [currency, setCurrency] = useState(() => localStorage.getItem('transitops_currency') || 'INR')
   const [distanceUnit, setDistanceUnit] = useState(() => localStorage.getItem('transitops_distance_unit') || 'km')
+  const [exchangeRate, setExchangeRate] = useState(() => parseFloat(localStorage.getItem('transitops_exchange_rate')) || 95)
+  const [inflationRate, setInflationRate] = useState(() => parseFloat(localStorage.getItem('transitops_inflation_rate')) || 6.0)
 
   useEffect(() => {
     const handleStorageChange = () => {
       setCurrency(localStorage.getItem('transitops_currency') || 'INR')
       setDistanceUnit(localStorage.getItem('transitops_distance_unit') || 'km')
+      setExchangeRate(parseFloat(localStorage.getItem('transitops_exchange_rate')) || 95)
+      setInflationRate(parseFloat(localStorage.getItem('transitops_inflation_rate')) || 6.0)
     }
     window.addEventListener('storage', handleStorageChange)
     window.addEventListener('local-storage-update', handleStorageChange)
@@ -46,6 +50,47 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
     setDistanceUnit(val)
     localStorage.setItem('transitops_distance_unit', val)
     window.dispatchEvent(new Event('local-storage-update'))
+  }
+
+  const handleExchangeRateChange = (val) => {
+    const parsed = parseFloat(val) || 0
+    setExchangeRate(parsed)
+    localStorage.setItem('transitops_exchange_rate', parsed)
+    window.dispatchEvent(new Event('local-storage-update'))
+  }
+
+  const handleInflationRateChange = (val) => {
+    const parsed = parseFloat(val) || 0
+    setInflationRate(parsed)
+    localStorage.setItem('transitops_inflation_rate', parsed)
+    window.dispatchEvent(new Event('local-storage-update'))
+  }
+
+  const convertAmount = (amountInINR) => {
+    let converted = amountInINR;
+    if (currency === 'USD') {
+      converted = amountInINR / (exchangeRate || 95);
+    } else if (currency === 'EUR') {
+      converted = amountInINR / ((exchangeRate || 95) * 1.1);
+    } else if (currency === 'GBP') {
+      converted = amountInINR / ((exchangeRate || 95) * 1.25);
+    }
+    return converted;
+  }
+
+  const formatFinancial = (amountInINR) => {
+    const orig = convertAmount(amountInINR);
+    const inflated = orig * (1 + inflationRate / 100);
+    return (
+      <div className="flex flex-col text-left">
+        <span className="text-zinc-900 dark:text-zinc-100 font-bold">
+          {cSym}{orig.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </span>
+        <span className="text-[10px] text-zinc-400 font-medium block leading-none mt-0.5">
+          Inflated: {cSym}{inflated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </span>
+      </div>
+    );
   }
   const [editingVehicleId, setEditingVehicleId] = useState(null)
   const [editingDriverId, setEditingDriverId] = useState(null)
@@ -817,13 +862,11 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                           </div>
                           <div>
                             <span className="text-zinc-400 block uppercase tracking-wider text-[8px] font-bold">Investment</span>
-                            <span className="font-semibold text-zinc-700 dark:text-zinc-300 text-xs">{cSym}{(v.cost || 0).toLocaleString()}</span>
+                            {formatFinancial(v.cost || 0)}
                           </div>
                           <div>
                             <span className="text-zinc-400 block uppercase tracking-wider text-[8px] font-bold">Total Revenue</span>
-                            <span className="font-semibold text-emerald-600 dark:text-emerald-405 text-xs">
-                              {cSym}{(v.trips || []).filter(t => t.status === 'Completed').reduce((sum, t) => sum + t.revenue, 0).toLocaleString()}
-                            </span>
+                            {formatFinancial((v.trips || []).filter(t => t.status === 'Completed').reduce((sum, t) => sum + t.revenue, 0))}
                           </div>
                         </div>
                       </div>
@@ -1330,6 +1373,28 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                       </select>
                       <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
                     </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-zinc-500 block">USD to INR Exchange Rate (₹ per $1)</label>
+                    <input 
+                      type="number" 
+                      step="0.1"
+                      value={exchangeRate} 
+                      onChange={(e) => handleExchangeRateChange(e.target.value)} 
+                      className="w-full px-3 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-zinc-500 block">Inflation Adjustment Rate (%)</label>
+                    <input 
+                      type="number" 
+                      step="0.1"
+                      value={inflationRate} 
+                      onChange={(e) => handleInflationRateChange(e.target.value)} 
+                      className="w-full px-3 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none"
+                    />
                   </div>
                 </div>
               </Card>

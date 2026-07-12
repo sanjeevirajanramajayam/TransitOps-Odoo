@@ -20,11 +20,15 @@ export default function FinancialAnalystView({ activeSubTab }) {
   const [reports, setReports] = useState([])
   const [currency, setCurrency] = useState(() => localStorage.getItem('transitops_currency') || 'INR')
   const [distanceUnit, setDistanceUnit] = useState(() => localStorage.getItem('transitops_distance_unit') || 'km')
+  const [exchangeRate, setExchangeRate] = useState(() => parseFloat(localStorage.getItem('transitops_exchange_rate')) || 95)
+  const [inflationRate, setInflationRate] = useState(() => parseFloat(localStorage.getItem('transitops_inflation_rate')) || 6.0)
 
   useEffect(() => {
     const handleStorageChange = () => {
       setCurrency(localStorage.getItem('transitops_currency') || 'INR')
       setDistanceUnit(localStorage.getItem('transitops_distance_unit') || 'km')
+      setExchangeRate(parseFloat(localStorage.getItem('transitops_exchange_rate')) || 95)
+      setInflationRate(parseFloat(localStorage.getItem('transitops_inflation_rate')) || 6.0)
     }
     window.addEventListener('storage', handleStorageChange)
     window.addEventListener('local-storage-update', handleStorageChange)
@@ -52,6 +56,47 @@ export default function FinancialAnalystView({ activeSubTab }) {
     setDistanceUnit(val)
     localStorage.setItem('transitops_distance_unit', val)
     window.dispatchEvent(new Event('local-storage-update'))
+  }
+
+  const handleExchangeRateChange = (val) => {
+    const parsed = parseFloat(val) || 0
+    setExchangeRate(parsed)
+    localStorage.setItem('transitops_exchange_rate', parsed)
+    window.dispatchEvent(new Event('local-storage-update'))
+  }
+
+  const handleInflationRateChange = (val) => {
+    const parsed = parseFloat(val) || 0
+    setInflationRate(parsed)
+    localStorage.setItem('transitops_inflation_rate', parsed)
+    window.dispatchEvent(new Event('local-storage-update'))
+  }
+
+  const convertAmount = (amountInINR) => {
+    let converted = amountInINR;
+    if (currency === 'USD') {
+      converted = amountInINR / (exchangeRate || 95);
+    } else if (currency === 'EUR') {
+      converted = amountInINR / ((exchangeRate || 95) * 1.1);
+    } else if (currency === 'GBP') {
+      converted = amountInINR / ((exchangeRate || 95) * 1.25);
+    }
+    return converted;
+  }
+
+  const formatFinancial = (amountInINR) => {
+    const orig = convertAmount(amountInINR);
+    const inflated = orig * (1 + inflationRate / 100);
+    return (
+      <div className="flex flex-col text-left">
+        <span className="text-zinc-900 dark:text-zinc-100 font-bold">
+          {cSym}{orig.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </span>
+        <span className="text-[10px] text-zinc-400 font-medium block leading-none mt-0.5">
+          Inflated: {cSym}{inflated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </span>
+      </div>
+    );
   }
 
   const [availableVehicles, setAvailableVehicles] = useState([
@@ -603,7 +648,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                             <td className="py-3 px-3 font-bold">{log.reg}</td>
                             <td className="py-3 px-3 text-zinc-500">{log.date}</td>
                             <td className="py-3 px-3 font-semibold">{log.liters.toLocaleString()} L</td>
-                            <td className="py-3 px-3 font-black text-zinc-900 dark:text-zinc-100">{cSym}{log.cost.toLocaleString()}</td>
+                            <td className="py-3 px-3">{formatFinancial(log.cost)}</td>
                             <td className="py-3 px-3 font-mono text-[11px] text-zinc-500">{log.odometerReading.toLocaleString()} {distanceUnit === 'mi' ? 'mi/g' : 'km/l'}</td>
                             <td className="py-3 px-3 text-right">
                               <div className="flex justify-end gap-1.5">
@@ -668,7 +713,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                               </span>
                             </td>
                             <td className="py-3 px-3 text-zinc-500">{e.desc}</td>
-                            <td className="py-3 px-3 font-black text-zinc-900 dark:text-zinc-100">{cSym}{e.amount.toLocaleString()}</td>
+                            <td className="py-3 px-3">{formatFinancial(e.amount)}</td>
                             <td className="py-3 px-3 text-zinc-400">{e.date}</td>
                             <td className="py-3 px-3 text-right">
                               <div className="flex justify-end gap-1.5">
@@ -713,16 +758,16 @@ export default function FinancialAnalystView({ activeSubTab }) {
                       </div>
                       <div className="flex flex-wrap items-center gap-4 text-xs font-semibold">
                         <div className="px-3 py-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                          <span className="text-zinc-400 block text-[9px] uppercase font-bold">Total Fuel Cost</span>
-                          <span className="text-zinc-900 dark:text-zinc-100">{cSym}{totalFuelCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                          <span className="text-zinc-400 block text-[9px] uppercase font-bold mb-0.5">Total Fuel Cost</span>
+                          {formatFinancial(totalFuelCost)}
                         </div>
                         <div className="px-3 py-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                          <span className="text-zinc-400 block text-[9px] uppercase font-bold">Total Expenses</span>
-                          <span className="text-zinc-900 dark:text-zinc-100">{cSym}{totalExpCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                          <span className="text-zinc-400 block text-[9px] uppercase font-bold mb-0.5">Total Expenses</span>
+                          {formatFinancial(totalExpCost)}
                         </div>
                         <div className="px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black border border-zinc-200 dark:border-zinc-800">
-                          <span className="text-zinc-450 dark:text-zinc-500 block text-[9px] uppercase font-bold">Total Operational Cost</span>
-                          <span className="text-xs font-bold text-white dark:text-black">{cSym}{totalOpsCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                          <span className="text-zinc-450 dark:text-zinc-500 block text-[9px] uppercase font-bold mb-0.5">Total Operational Cost</span>
+                          {formatFinancial(totalOpsCost)}
                         </div>
                       </div>
                     </div>
@@ -759,8 +804,8 @@ export default function FinancialAnalystView({ activeSubTab }) {
                   <IndianRupee className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-extrabold tracking-tight">{cSym}{totalOps.toLocaleString()}</div>
-                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">Aggregate operational ledger cost</p>
+                  {formatFinancial(totalOps)}
+                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-2">Aggregate operational ledger cost</p>
                 </CardContent>
               </Card>
 
@@ -770,8 +815,8 @@ export default function FinancialAnalystView({ activeSubTab }) {
                   <IndianRupee className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-extrabold tracking-tight">{cSym}{totalRevenue.toLocaleString()}</div>
-                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">Reflects all completed dispatches</p>
+                  {formatFinancial(totalRevenue)}
+                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-2">Reflects all completed dispatches</p>
                 </CardContent>
               </Card>
             </div>
@@ -833,9 +878,9 @@ export default function FinancialAnalystView({ activeSubTab }) {
                       reports.map((r) => (
                         <tr key={r.vehicleId} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 text-xs text-zinc-800 dark:text-zinc-200">
                           <td className="py-3 px-3 font-bold">{r.registrationNumber} ({r.modelName})</td>
-                          <td className="py-3 px-3">{cSym}{r.totalRevenue.toLocaleString()}</td>
-                          <td className="py-3 px-3">{cSym}{r.totalOperationalCost.toLocaleString()}</td>
-                          <td className="py-3 px-3">{cSym}{r.netProfit.toLocaleString()}</td>
+                          <td className="py-3 px-3">{formatFinancial(r.totalRevenue)}</td>
+                          <td className="py-3 px-3">{formatFinancial(r.totalOperationalCost)}</td>
+                          <td className="py-3 px-3">{formatFinancial(r.netProfit)}</td>
                           <td className="py-3 px-3">
                             <span className={'px-2 py-0.5 rounded text-[10px] font-bold ' + (r.roi >= 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500')}>
                               {(r.roi * 100).toFixed(1)}%
@@ -930,7 +975,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                         <tr key={r.vehicleId} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 text-xs text-zinc-800 dark:text-zinc-200">
                           <td className="py-3 px-3 font-bold">{r.registrationNumber} ({r.modelName})</td>
                           <td className="py-3 px-3 font-mono text-[11px]">{r.fuelEfficiency.toFixed(1)} {distanceUnit === 'mi' ? 'mpg' : 'km/L'}</td>
-                          <td className="py-3 px-3">{cSym}{r.totalOperationalCost.toLocaleString()}</td>
+                          <td className="py-3 px-3">{formatFinancial(r.totalOperationalCost)}</td>
                         </tr>
                       ))
                     )}
@@ -980,12 +1025,34 @@ export default function FinancialAnalystView({ activeSubTab }) {
               </div>
 
               <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-500 block">USD to INR Exchange Rate (₹ per $1)</label>
+                <input 
+                  type="number" 
+                  step="0.1"
+                  value={exchangeRate} 
+                  onChange={(e) => handleExchangeRateChange(e.target.value)} 
+                  className="w-full px-3 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-500 block">Inflation Adjustment Rate (%)</label>
+                <input 
+                  type="number" 
+                  step="0.1"
+                  value={inflationRate} 
+                  onChange={(e) => handleInflationRateChange(e.target.value)} 
+                  className="w-full px-3 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-zinc-500 block">Weekly Fuel Budget Limit (per vehicle)</label>
                 <div className="relative">
                   <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
-                    <option>₹500</option>
-                    <option>₹800 (Default)</option>
-                    <option>₹1,200</option>
+                    <option>{cSym}500</option>
+                    <option>{cSym}800 (Default)</option>
+                    <option>{cSym}1,200</option>
                   </select>
                   <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
                 </div>
