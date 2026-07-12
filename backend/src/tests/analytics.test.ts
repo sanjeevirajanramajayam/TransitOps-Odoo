@@ -4,14 +4,14 @@ import prisma from '../db';
 
 describe('Analytics API', () => {
   beforeAll(async () => {
-    await prisma.$transaction([
-      prisma.transitTrip.deleteMany({}),
-      prisma.transitMaintenanceLog.deleteMany({}),
-      prisma.transitFuelLog.deleteMany({}),
-      prisma.transitExpense.deleteMany({}),
-      prisma.transitVehicle.deleteMany({}),
-      prisma.transitDriver.deleteMany({})
-    ]);
+    await prisma.transitAlert.deleteMany({});
+    await prisma.transitTrip.deleteMany({});
+    await prisma.transitMaintenanceLog.deleteMany({});
+    await prisma.transitFuelLog.deleteMany({});
+    await prisma.transitExpense.deleteMany({});
+    await prisma.transitVehicle.deleteMany({});
+    await prisma.transitDriver.deleteMany({});
+    await prisma.user.deleteMany({});
 
     // Seed Vehicles
     // 1 OnTrip, 2 Available, 1 InShop, 1 Retired (Total operational = 4)
