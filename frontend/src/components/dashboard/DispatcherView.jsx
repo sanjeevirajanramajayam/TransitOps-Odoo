@@ -18,6 +18,30 @@ export default function DispatcherView({ activeSubTab }) {
   const [vehicleSearch, setVehicleSearch] = useState('')
   const [vehicleStatusFilter, setVehicleStatusFilter] = useState('All')
 
+  const [currency, setCurrency] = useState(() => localStorage.getItem('transitops_currency') || 'INR')
+  const [distanceUnit, setDistanceUnit] = useState(() => localStorage.getItem('transitops_distance_unit') || 'km')
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setCurrency(localStorage.getItem('transitops_currency') || 'INR')
+      setDistanceUnit(localStorage.getItem('transitops_distance_unit') || 'km')
+    }
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('local-storage-update', handleStorageChange)
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('local-storage-update', handleStorageChange)
+    }
+  }, [])
+
+  const getCurrencySymbol = (code) => {
+    if (code === 'USD') return '$'
+    if (code === 'EUR') return '€'
+    if (code === 'GBP') return '£'
+    return '₹'
+  }
+  const cSym = getCurrencySymbol(currency)
+
   // States for Trips CRUD Form
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingTripId, setEditingTripId] = useState(null)
@@ -60,8 +84,8 @@ export default function DispatcherView({ activeSubTab }) {
           reg: v.registrationNumber,
           model: v.modelName,
           type: v.vehicleType,
-          cap: `${v.maxLoadCapacity.toLocaleString()} kg`,
-          odo: `${v.currentOdometer.toLocaleString()} mi`,
+          cap: v.maxLoadCapacity,
+          odo: v.currentOdometer,
           status: v.status === 'OnTrip' ? 'On Trip' : v.status === 'InShop' ? 'In Shop' : v.status,
           img: v.vehicleType === 'Truck' ? '/truck.png' : v.vehicleType === 'Semi' ? '/semi.png' : v.vehicleType === 'Box Truck' ? '/box_truck.png' : '/van.png'
         })))
@@ -385,11 +409,11 @@ export default function DispatcherView({ activeSubTab }) {
                       <div className="grid grid-cols-2 gap-4 pt-1 text-xs border-t border-zinc-100 dark:border-zinc-800/80">
                         <div>
                           <span className="text-zinc-400 block uppercase tracking-wider text-[8px] font-bold">Max Capacity</span>
-                          <span className="font-semibold text-zinc-700 dark:text-zinc-300 text-xs">{v.cap}</span>
+                          <span className="font-semibold text-zinc-700 dark:text-zinc-300 text-xs">{(v.cap || 0).toLocaleString()} {distanceUnit === 'mi' ? 'lbs' : 'kg'}</span>
                         </div>
                         <div>
                           <span className="text-zinc-400 block uppercase tracking-wider text-[8px] font-bold">Odometer</span>
-                          <span className="font-semibold text-zinc-700 dark:text-zinc-300 text-xs">{v.odo}</span>
+                          <span className="font-semibold text-zinc-700 dark:text-zinc-300 text-xs">{(v.odo || 0).toLocaleString()} {distanceUnit}</span>
                         </div>
                       </div>
                     </div>
@@ -450,7 +474,7 @@ export default function DispatcherView({ activeSubTab }) {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-1">
-                      <label className="text-xs uppercase font-bold text-zinc-400">Cargo Weight (kg)</label>
+                      <label className="text-xs uppercase font-bold text-zinc-400">Cargo Weight ({distanceUnit === 'mi' ? 'lbs' : 'kg'})</label>
                       <input
                         type="number"
                         required
@@ -462,7 +486,7 @@ export default function DispatcherView({ activeSubTab }) {
                       {fieldErrors.cargoWeight && <p className="text-[10px] text-red-500 font-semibold mt-0.5">{fieldErrors.cargoWeight}</p>}
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs uppercase font-bold text-zinc-400">Planned Distance (mi)</label>
+                      <label className="text-xs uppercase font-bold text-zinc-400">Planned Distance ({distanceUnit})</label>
                       <input
                         type="number"
                         required
@@ -474,7 +498,7 @@ export default function DispatcherView({ activeSubTab }) {
                       {fieldErrors.plannedDistance && <p className="text-[10px] text-red-500 font-semibold mt-0.5">{fieldErrors.plannedDistance}</p>}
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs uppercase font-bold text-zinc-400">Estimated Revenue ($)</label>
+                      <label className="text-xs uppercase font-bold text-zinc-400">Estimated Revenue ({cSym})</label>
                       <input
                         type="number"
                         required
@@ -504,7 +528,7 @@ export default function DispatcherView({ activeSubTab }) {
                               disabled={v.status !== 'Available' && editingTripId === null}
                               className={v.status !== 'Available' ? 'text-zinc-400 dark:text-zinc-600 bg-zinc-50 dark:bg-zinc-955/20' : ''}
                             >
-                              {v.reg} ({v.model}) - Max {v.cap} [{v.status}]
+                              {v.reg} ({v.model}) - Max {(v.cap || 0).toLocaleString()} {distanceUnit === 'mi' ? 'lbs' : 'kg'} [{v.status}]
                             </option>
                           ))}
                         </select>
@@ -597,7 +621,7 @@ export default function DispatcherView({ activeSubTab }) {
                           </td>
                           <td className="py-3.5 px-4">{veh ? veh.reg : `ID: ${trip.vehicleId}`}</td>
                           <td className="py-3.5 px-4 font-medium">{drv ? drv.name : `ID: ${trip.driverId}`}</td>
-                          <td className="py-3.5 px-4">{trip.cargoWeight.toLocaleString()} kg</td>
+                          <td className="py-3.5 px-4">{trip.cargoWeight.toLocaleString()} {distanceUnit === 'mi' ? 'lbs' : 'kg'}</td>
                           <td className="py-3.5 px-4 min-w-[200px]">
                             <div className="flex flex-col space-y-1.5">
                               <div className="flex justify-between text-[9px] uppercase font-bold text-zinc-400 dark:text-zinc-500 select-none">
@@ -713,7 +737,7 @@ export default function DispatcherView({ activeSubTab }) {
             <form onSubmit={handleCompleteSubmit}>
               <CardContent className="p-6 space-y-4">
                 <div className="space-y-1">
-                  <label className="text-xs uppercase font-bold text-zinc-400">Actual Distance Traveled (mi)</label>
+                  <label className="text-xs uppercase font-bold text-zinc-400">Actual Distance Traveled ({distanceUnit})</label>
                   <input
                     type="number"
                     required
@@ -737,7 +761,7 @@ export default function DispatcherView({ activeSubTab }) {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs uppercase font-bold text-zinc-400">Final Odometer Reading (mi)</label>
+                  <label className="text-xs uppercase font-bold text-zinc-400">Final Odometer Reading ({distanceUnit})</label>
                   <input
                     type="number"
                     required

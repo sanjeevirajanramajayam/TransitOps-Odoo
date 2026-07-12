@@ -12,6 +12,41 @@ import {
 export default function FleetManagerView({ activeSubTab, setActiveTab }) {
   const [vehicles, setVehicles] = useState([])
   const [driversList, setDriversList] = useState([])
+  const [currency, setCurrency] = useState(() => localStorage.getItem('transitops_currency') || 'INR')
+  const [distanceUnit, setDistanceUnit] = useState(() => localStorage.getItem('transitops_distance_unit') || 'km')
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setCurrency(localStorage.getItem('transitops_currency') || 'INR')
+      setDistanceUnit(localStorage.getItem('transitops_distance_unit') || 'km')
+    }
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('local-storage-update', handleStorageChange)
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('local-storage-update', handleStorageChange)
+    }
+  }, [])
+
+  const getCurrencySymbol = (code) => {
+    if (code === 'USD') return '$'
+    if (code === 'EUR') return '€'
+    if (code === 'GBP') return '£'
+    return '₹'
+  }
+  const cSym = getCurrencySymbol(currency)
+
+  const handleCurrencyChange = (val) => {
+    setCurrency(val)
+    localStorage.setItem('transitops_currency', val)
+    window.dispatchEvent(new Event('local-storage-update'))
+  }
+
+  const handleDistanceChange = (val) => {
+    setDistanceUnit(val)
+    localStorage.setItem('transitops_distance_unit', val)
+    window.dispatchEvent(new Event('local-storage-update'))
+  }
   const [editingVehicleId, setEditingVehicleId] = useState(null)
   const [editingDriverId, setEditingDriverId] = useState(null)
 
@@ -36,10 +71,8 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
           reg: v.registrationNumber,
           model: v.modelName,
           type: v.vehicleType,
-          cap: `${v.maxLoadCapacity.toLocaleString()} lbs`,
-          odo: `${v.currentOdometer.toLocaleString()} mi`,
-          rawCap: v.maxLoadCapacity,
-          rawOdo: v.currentOdometer,
+          cap: v.maxLoadCapacity,
+          odo: v.currentOdometer,
           cost: v.acquisitionCost,
           status: v.status === 'OnTrip' ? 'On Trip' : v.status === 'InShop' ? 'In Shop' : v.status,
           trips: v.trips || []
@@ -760,22 +793,22 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 pt-1 text-xs border-t border-zinc-100 dark:border-zinc-800/80">
-                          <div>
+                           <div>
                             <span className="text-zinc-400 block uppercase tracking-wider text-[8px] font-bold">Max Capacity</span>
-                            <span className="font-semibold text-zinc-700 dark:text-zinc-300 text-xs">{v.cap}</span>
+                            <span className="font-semibold text-zinc-700 dark:text-zinc-300 text-xs">{(v.cap || 0).toLocaleString()} {distanceUnit === 'mi' ? 'lbs' : 'kg'}</span>
                           </div>
                           <div>
                             <span className="text-zinc-400 block uppercase tracking-wider text-[8px] font-bold">Odometer</span>
-                            <span className="font-semibold text-zinc-700 dark:text-zinc-300 text-xs">{v.odo}</span>
+                            <span className="font-semibold text-zinc-700 dark:text-zinc-300 text-xs">{(v.odo || 0).toLocaleString()} {distanceUnit}</span>
                           </div>
                           <div>
                             <span className="text-zinc-400 block uppercase tracking-wider text-[8px] font-bold">Investment</span>
-                            <span className="font-semibold text-zinc-700 dark:text-zinc-300 text-xs">₹{(v.cost || 0).toLocaleString()}</span>
+                            <span className="font-semibold text-zinc-700 dark:text-zinc-300 text-xs">{cSym}{(v.cost || 0).toLocaleString()}</span>
                           </div>
                           <div>
                             <span className="text-zinc-400 block uppercase tracking-wider text-[8px] font-bold">Total Revenue</span>
                             <span className="font-semibold text-emerald-600 dark:text-emerald-405 text-xs">
-                              ₹{(v.trips || []).filter(t => t.status === 'Completed').reduce((sum, t) => sum + t.revenue, 0).toLocaleString()}
+                              {cSym}{(v.trips || []).filter(t => t.status === 'Completed').reduce((sum, t) => sum + t.revenue, 0).toLocaleString()}
                             </span>
                           </div>
                         </div>
@@ -1219,11 +1252,15 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-zinc-500 block">Currency Type</label>
                     <div className="relative">
-                      <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
-                        <option>INR (₹) - Indian Rupee</option>
-                        <option>USD ($) - US Dollar</option>
-                        <option>EUR (€) - Euro</option>
-                        <option>GBP (£) - British Pound</option>
+                      <select 
+                        value={currency} 
+                        onChange={(e) => handleCurrencyChange(e.target.value)} 
+                        className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none"
+                      >
+                        <option value="INR">INR (₹) - Indian Rupee</option>
+                        <option value="USD">USD ($) - US Dollar</option>
+                        <option value="EUR">EUR (€) - Euro</option>
+                        <option value="GBP">GBP (£) - British Pound</option>
                       </select>
                       <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
                     </div>
@@ -1232,9 +1269,13 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-zinc-500 block">Distance Unit</label>
                     <div className="relative">
-                      <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
-                        <option>Kilometers (km)</option>
-                        <option>Miles (mi)</option>
+                      <select 
+                        value={distanceUnit} 
+                        onChange={(e) => handleDistanceChange(e.target.value)} 
+                        className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none"
+                      >
+                        <option value="km">Kilometers (km)</option>
+                        <option value="mi">Miles (mi)</option>
                       </select>
                       <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
                     </div>
@@ -1687,7 +1728,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                               disabled={v.status !== 'Available'}
                               className={v.status !== 'Available' ? 'text-zinc-400 dark:text-zinc-600 bg-zinc-50 dark:bg-zinc-950/20' : ''}
                             >
-                              {v.reg} ({v.model}) - Max {v.cap} [{v.status}]
+                              {v.reg} ({v.model}) - Max {(v.cap || 0).toLocaleString()} {distanceUnit === 'mi' ? 'lbs' : 'kg'} [{v.status}]
                             </option>
                           ))}
                         </select>

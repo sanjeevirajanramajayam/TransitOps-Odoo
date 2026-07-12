@@ -18,6 +18,41 @@ export default function FinancialAnalystView({ activeSubTab }) {
   const [expenses, setExpenses] = useState([])
   const [fuelLogs, setFuelLogs] = useState([])
   const [reports, setReports] = useState([])
+  const [currency, setCurrency] = useState(() => localStorage.getItem('transitops_currency') || 'INR')
+  const [distanceUnit, setDistanceUnit] = useState(() => localStorage.getItem('transitops_distance_unit') || 'km')
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setCurrency(localStorage.getItem('transitops_currency') || 'INR')
+      setDistanceUnit(localStorage.getItem('transitops_distance_unit') || 'km')
+    }
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('local-storage-update', handleStorageChange)
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('local-storage-update', handleStorageChange)
+    }
+  }, [])
+
+  const getCurrencySymbol = (code) => {
+    if (code === 'USD') return '$'
+    if (code === 'EUR') return '€'
+    if (code === 'GBP') return '£'
+    return '₹'
+  }
+  const cSym = getCurrencySymbol(currency)
+
+  const handleCurrencyChange = (val) => {
+    setCurrency(val)
+    localStorage.setItem('transitops_currency', val)
+    window.dispatchEvent(new Event('local-storage-update'))
+  }
+
+  const handleDistanceChange = (val) => {
+    setDistanceUnit(val)
+    localStorage.setItem('transitops_distance_unit', val)
+    window.dispatchEvent(new Event('local-storage-update'))
+  }
 
   const [availableVehicles, setAvailableVehicles] = useState([
     { id: 1, reg: 'TX-8902', model: 'Ford Transit' },
@@ -80,9 +115,9 @@ export default function FinancialAnalystView({ activeSubTab }) {
           id: log.id,
           reg: log.vehicle?.registrationNumber || 'Generic',
           date: new Date(log.date).toISOString().split('T')[0],
-          volume: `${log.liters} L`,
-          cost: `₹${log.cost.toLocaleString()}`,
-          mpg: `${log.odometerReading} km/l`
+          liters: log.liters,
+          cost: log.cost,
+          odometerReading: log.odometerReading
         }))
         setFuelLogs(mappedFuel)
       }
@@ -276,9 +311,9 @@ export default function FinancialAnalystView({ activeSubTab }) {
     setEditingFuelId(log.id)
     setFuelReg(log.reg)
     setFuelDate(log.date)
-    setFuelVolume(log.volume.replace(/[^0-9.]/g, ''))
-    setFuelCost(log.cost.replace(/[^0-9.]/g, ''))
-    setFuelMpg(log.mpg.replace(' km/l', ''))
+    setFuelVolume((log.liters || '').toString())
+    setFuelCost((log.cost || '').toString())
+    setFuelMpg((log.odometerReading || '').toString())
     setIsExpenseFormOpen(false)
     setIsFuelFormOpen(true)
   }
@@ -567,9 +602,9 @@ export default function FinancialAnalystView({ activeSubTab }) {
                           <tr key={log.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 text-zinc-800 dark:text-zinc-200 text-xs">
                             <td className="py-3 px-3 font-bold">{log.reg}</td>
                             <td className="py-3 px-3 text-zinc-500">{log.date}</td>
-                            <td className="py-3 px-3 font-semibold">{log.volume}</td>
-                            <td className="py-3 px-3 font-black text-zinc-900 dark:text-zinc-100">{log.cost}</td>
-                            <td className="py-3 px-3 font-mono text-[11px] text-zinc-500">{log.mpg}</td>
+                            <td className="py-3 px-3 font-semibold">{log.liters.toLocaleString()} L</td>
+                            <td className="py-3 px-3 font-black text-zinc-900 dark:text-zinc-100">{cSym}{log.cost.toLocaleString()}</td>
+                            <td className="py-3 px-3 font-mono text-[11px] text-zinc-500">{log.odometerReading.toLocaleString()} {distanceUnit === 'mi' ? 'mi/g' : 'km/l'}</td>
                             <td className="py-3 px-3 text-right">
                               <div className="flex justify-end gap-1.5">
                                 <Button
@@ -633,7 +668,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                               </span>
                             </td>
                             <td className="py-3 px-3 text-zinc-500">{e.desc}</td>
-                            <td className="py-3 px-3 font-black text-zinc-900 dark:text-zinc-100">₹{e.amount.toLocaleString()}</td>
+                            <td className="py-3 px-3 font-black text-zinc-900 dark:text-zinc-100">{cSym}{e.amount.toLocaleString()}</td>
                             <td className="py-3 px-3 text-zinc-400">{e.date}</td>
                             <td className="py-3 px-3 text-right">
                               <div className="flex justify-end gap-1.5">
@@ -665,12 +700,12 @@ export default function FinancialAnalystView({ activeSubTab }) {
 
               {/* Block 3: Total Summary Card */}
               {(() => {
-                const totalFuelCost = fuelLogs.reduce((acc, log) => acc + (parseFloat(log.cost.replace(/[^0-9.]/g, '')) || 0), 0);
+                const totalFuelCost = fuelLogs.reduce((acc, log) => acc + (log.cost || 0), 0);
                 const totalExpCost = expenses.reduce((acc, exp) => acc + (exp.amount || 0), 0);
                 const totalOpsCost = totalFuelCost + totalExpCost;
 
                 return (
-                  <Card className="border-zinc-250 dark:border-zinc-850 bg-zinc-50 dark:bg-black rounded-xl p-5 border shadow-sm">
+                  <Card className="border-zinc-255 dark:border-zinc-855 bg-zinc-50 dark:bg-black rounded-xl p-5 border shadow-sm">
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                       <div>
                         <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Operational Cost Aggregation</h4>
@@ -679,15 +714,15 @@ export default function FinancialAnalystView({ activeSubTab }) {
                       <div className="flex flex-wrap items-center gap-4 text-xs font-semibold">
                         <div className="px-3 py-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
                           <span className="text-zinc-400 block text-[9px] uppercase font-bold">Total Fuel Cost</span>
-                          <span className="text-zinc-900 dark:text-zinc-100">₹{totalFuelCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                          <span className="text-zinc-900 dark:text-zinc-100">{cSym}{totalFuelCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </div>
                         <div className="px-3 py-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
                           <span className="text-zinc-400 block text-[9px] uppercase font-bold">Total Expenses</span>
-                          <span className="text-zinc-900 dark:text-zinc-100">₹{totalExpCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                          <span className="text-zinc-900 dark:text-zinc-100">{cSym}{totalExpCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </div>
                         <div className="px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black border border-zinc-200 dark:border-zinc-800">
                           <span className="text-zinc-450 dark:text-zinc-500 block text-[9px] uppercase font-bold">Total Operational Cost</span>
-                          <span className="text-xs font-bold text-white dark:text-black">₹{totalOpsCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                          <span className="text-xs font-bold text-white dark:text-black">{cSym}{totalOpsCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </div>
                       </div>
                     </div>
@@ -724,7 +759,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                   <IndianRupee className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-extrabold tracking-tight">₹{totalOps.toLocaleString()}</div>
+                  <div className="text-3xl font-extrabold tracking-tight">{cSym}{totalOps.toLocaleString()}</div>
                   <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">Aggregate operational ledger cost</p>
                 </CardContent>
               </Card>
@@ -735,7 +770,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                   <IndianRupee className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-extrabold tracking-tight">₹{totalRevenue.toLocaleString()}</div>
+                  <div className="text-3xl font-extrabold tracking-tight">{cSym}{totalRevenue.toLocaleString()}</div>
                   <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">Reflects all completed dispatches</p>
                 </CardContent>
               </Card>
@@ -798,9 +833,9 @@ export default function FinancialAnalystView({ activeSubTab }) {
                       reports.map((r) => (
                         <tr key={r.vehicleId} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 text-xs text-zinc-800 dark:text-zinc-200">
                           <td className="py-3 px-3 font-bold">{r.registrationNumber} ({r.modelName})</td>
-                          <td className="py-3 px-3">₹{r.totalRevenue.toLocaleString()}</td>
-                          <td className="py-3 px-3">₹{r.totalOperationalCost.toLocaleString()}</td>
-                          <td className="py-3 px-3">₹{r.netProfit.toLocaleString()}</td>
+                          <td className="py-3 px-3">{cSym}{r.totalRevenue.toLocaleString()}</td>
+                          <td className="py-3 px-3">{cSym}{r.totalOperationalCost.toLocaleString()}</td>
+                          <td className="py-3 px-3">{cSym}{r.netProfit.toLocaleString()}</td>
                           <td className="py-3 px-3">
                             <span className={'px-2 py-0.5 rounded text-[10px] font-bold ' + (r.roi >= 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500')}>
                               {(r.roi * 100).toFixed(1)}%
@@ -846,7 +881,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                         <XAxis type="number" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
                         <YAxis dataKey="name" type="category" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} width={80} />
                         <Tooltip contentStyle={{ background: '#09090b', border: '1px solid #27272a', borderRadius: '8px', color: '#fff' }} />
-                        <Bar dataKey="value" name="Amount (₹)" radius={[0, 4, 4, 0]}>
+                        <Bar dataKey="value" name={`Amount (${cSym})`} radius={[0, 4, 4, 0]}>
                           {dynamicExpenseBreakdown.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
@@ -863,7 +898,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                 </h4>
                 <div className="p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl">
                   <span className="text-[10px] text-zinc-400 uppercase block leading-none">Net Fleet Efficiency</span>
-                  <span className="text-lg font-black text-zinc-900 dark:text-zinc-55 block mt-1.5">{avgEfficiency.toFixed(1)} km/L</span>
+                  <span className="text-lg font-black text-zinc-900 dark:text-zinc-55 block mt-1.5">{avgEfficiency.toFixed(1)} {distanceUnit === 'mi' ? 'mpg' : 'km/L'}</span>
                 </div>
                 <p className="text-[10px] text-zinc-500 leading-relaxed">
                   Overall heavy vehicle and commercial van averages are within 4% of targeted fuel card limits.
@@ -894,8 +929,8 @@ export default function FinancialAnalystView({ activeSubTab }) {
                       reports.map((r) => (
                         <tr key={r.vehicleId} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 text-xs text-zinc-800 dark:text-zinc-200">
                           <td className="py-3 px-3 font-bold">{r.registrationNumber} ({r.modelName})</td>
-                          <td className="py-3 px-3 font-mono text-[11px]">{r.fuelEfficiency.toFixed(1)} km/L</td>
-                          <td className="py-3 px-3">₹{r.totalOperationalCost.toLocaleString()}</td>
+                          <td className="py-3 px-3 font-mono text-[11px]">{r.fuelEfficiency.toFixed(1)} {distanceUnit === 'mi' ? 'mpg' : 'km/L'}</td>
+                          <td className="py-3 px-3">{cSym}{r.totalOperationalCost.toLocaleString()}</td>
                         </tr>
                       ))
                     )}
@@ -915,11 +950,15 @@ export default function FinancialAnalystView({ activeSubTab }) {
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-zinc-500 block">Currency Type</label>
                 <div className="relative">
-                  <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
-                    <option>INR (₹) - Indian Rupee</option>
-                    <option>USD ($) - US Dollar</option>
-                    <option>EUR (€) - Euro</option>
-                    <option>GBP (£) - British Pound</option>
+                  <select 
+                    value={currency} 
+                    onChange={(e) => handleCurrencyChange(e.target.value)} 
+                    className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none"
+                  >
+                    <option value="INR">INR (₹) - Indian Rupee</option>
+                    <option value="USD">USD ($) - US Dollar</option>
+                    <option value="EUR">EUR (€) - Euro</option>
+                    <option value="GBP">GBP (£) - British Pound</option>
                   </select>
                   <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
                 </div>
@@ -928,9 +967,13 @@ export default function FinancialAnalystView({ activeSubTab }) {
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-zinc-500 block">Distance Unit</label>
                 <div className="relative">
-                  <select className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
-                    <option>Kilometers (km)</option>
-                    <option>Miles (mi)</option>
+                  <select 
+                    value={distanceUnit} 
+                    onChange={(e) => handleDistanceChange(e.target.value)} 
+                    className="w-full appearance-none pl-3 pr-8 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none"
+                  >
+                    <option value="km">Kilometers (km)</option>
+                    <option value="mi">Miles (mi)</option>
                   </select>
                   <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
                 </div>
