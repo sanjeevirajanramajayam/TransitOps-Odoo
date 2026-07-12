@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { ZodSchema, ZodError } from 'zod'
-import { sendResponse } from '../index'
+import { sendResponse } from '../utils/response'
 
 export const validateRequest = (schema: ZodSchema) => {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {

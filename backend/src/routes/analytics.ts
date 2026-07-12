@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express'
-import { sendResponse } from '../index'
+import { sendResponse } from '../utils/response'
 
 const router = Router()
 

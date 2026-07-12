@@ -6,7 +6,8 @@ import cors from 'cors';
 import prisma from './db';
 import logger from './config/logger';
 import morganMiddleware from './middleware/morgan';
-import { errorHandler, sendResponse } from './middleware/errorHandler';
+import { errorHandler } from './middleware/errorHandler';
+import { sendResponse } from './utils/response';
 
 import authRouter from './routes/auth';
 import vehiclesRouter from './routes/vehicles';
@@ -81,6 +82,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   }
 
   return sendResponse(res, statusCode, false, message);
+});
 // A route designed to trigger a test error for logging verification
 app.get('/api/error-test', (req: Request, res: Response, next: NextFunction) => {
   const testError = new Error('Test Error: verification of the global error logger');

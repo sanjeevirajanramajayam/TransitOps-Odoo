@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express'
 import { z } from 'zod'
 import { validateRequest } from '../middleware/validate'
-import { sendResponse } from '../index'
+import { sendResponse } from '../utils/response'
 
 const router = Router()
 
