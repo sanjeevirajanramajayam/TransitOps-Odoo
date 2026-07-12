@@ -7,6 +7,23 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum UserRole {
+  FleetManager     @map("Fleet Manager")
+  Driver           @map("Driver")
+  SafetyOfficer    @map("Safety Officer")
+  FinancialAnalyst @map("Financial Analyst")
+}
+
+model User {
+  id       Int      @id @default(autoincrement())
+  email    String   @unique
+  password String
+  name     String
+  role     UserRole
+
+  @@map("transit_user")
+}
+
 enum VehicleStatus {
   Available
   OnTrip    @map("On Trip")
