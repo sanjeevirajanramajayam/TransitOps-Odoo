@@ -59,6 +59,7 @@ enum DriverStatus {
 model TransitDriver {
   id                Int          @id @default(autoincrement())
   name              String
+  email             String?      @unique @map("email")
   licenseNumber     String       @unique @map("license_number")
   licenseCategory   String       @map("license_category")
   licenseExpiryDate DateTime     @map("license_expiry_date")
