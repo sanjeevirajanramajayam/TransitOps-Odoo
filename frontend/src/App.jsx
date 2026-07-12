@@ -46,10 +46,7 @@ export default function App() {
           { name: 'Overview', icon: BarChart3 },
           { name: 'Vehicles', icon: Truck },
           { name: 'Drivers', icon: Users },
-          { name: 'Tracking & GPS', icon: MapPin },
           { name: 'Maintenance', icon: Wrench },
-          { name: 'Safety & Alerts', icon: ShieldAlert },
-          { name: 'Compliance & Docs', icon: FileCheck },
           { name: 'Settings', icon: Settings }
         ]
       case 'Dispatcher':
