@@ -46,9 +46,31 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
     }
   }
 
+  const fetchTrips = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/v1/trips')
+      const data = await res.json()
+      if (data.success) {
+        const mapped = data.data.map(t => ({
+          id: t.id,
+          source: t.source,
+          dest: t.destination,
+          vehicle: t.vehicle?.registrationNumber || 'Unknown',
+          driver: t.driver?.name || 'Unknown',
+          weight: `${t.cargoWeight} kg`,
+          status: t.status === 'OnTrip' ? 'On Trip' : t.status
+        }))
+        setActiveTrips(mapped)
+      }
+    } catch (err) {
+      console.error('Failed to fetch trips', err)
+    }
+  }
+
   useEffect(() => {
     fetchVehicles()
     fetchDrivers()
+    fetchTrips()
   }, [])
 
   // Dispatch form states
@@ -60,65 +82,22 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
   const [dispatchError, setDispatchError] = useState('')
   const [dispatchSuccess, setDispatchSuccess] = useState('')
 
-  const [activeTrips, setActiveTrips] = useState([
-    { id: 1, source: 'Dallas, TX', dest: 'Houston, TX', vehicle: 'TX-8902', driver: 'Alex Rivera', weight: '2,800 kg', status: 'On Trip' },
-    { id: 2, source: 'Los Angeles, CA', dest: 'San Jose, CA', vehicle: 'CA-4412', driver: 'Priya Patel', weight: '11,200 kg', status: 'Dispatched' }
-  ])
+  const [activeTrips, setActiveTrips] = useState([])
 
   const [vehicleSearch, setVehicleSearch] = useState('')
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState('All')
   const [vehicleStatusFilter, setVehicleStatusFilter] = useState('All')
 
-  // Mock data using rupee values
-  const trackingVehicles = [
-    { id: 'TX-8902', driver: 'Alex Rivera', dest: 'Houston, TX', speed: '62 mph', status: 'On Time', battery: '98%', progress: 65 },
-    { id: 'CA-4412', driver: 'Priya Patel', dest: 'San Jose, CA', speed: '55 mph', status: 'Delayed', battery: '94%', progress: 30 },
-    { id: 'FL-7711', driver: 'John Doe', dest: 'Dallas, TX', speed: '0 mph', status: 'Stationary', battery: '100%', progress: 0 }
-  ]
+  // Mock data cleared to empty lists
+  const trackingVehicles = []
+  const maintenanceLogs = []
+  const fuelLogs = []
+  const safetyAlerts = []
+  const complianceDocs = []
 
-  const maintenanceLogs = [
-    { id: 'M-101', reg: 'TX-8902', service: 'Oil & Filter Change', cost: '₹120', date: '2026-06-15', status: 'Completed' },
-    { id: 'M-102', reg: 'NY-1029', service: 'Brake Pad Replacement', cost: '₹450', date: '2026-07-10', status: 'In Progress' },
-    { id: 'M-103', reg: 'FL-7711', service: 'Tire Rotation', cost: '₹80', date: '2026-05-20', status: 'Completed' },
-    { id: 'M-104', reg: 'CA-4412', service: 'Transmission Flush', cost: '₹320', date: '2026-08-01', status: 'Scheduled' }
-  ]
+  const roiData = []
+  const fuelData = []
 
-  const fuelLogs = [
-    { id: 'FL-902', reg: 'TX-8902', date: '2026-07-10', gallons: 18.4, cost: '₹68.50', mpg: 14.2 },
-    { id: 'FL-903', reg: 'CA-4412', date: '2026-07-11', gallons: 45.2, cost: '₹185.00', mpg: 7.8 },
-    { id: 'FL-904', reg: 'NY-1029', date: '2026-07-11', gallons: 15.0, cost: '₹55.80', mpg: 13.5 },
-    { id: 'FL-905', reg: 'FL-7711', date: '2026-07-12', gallons: 120.0, cost: '₹498.00', mpg: 6.2 }
-  ]
-
-  const safetyAlerts = [
-    { id: 'SA-401', reg: 'CA-4412', severity: 'Critical', event: 'Harsh Braking Detected', time: '10 mins ago', driver: 'Priya Patel' },
-    { id: 'SA-402', reg: 'TX-8902', severity: 'Moderate', event: 'Speed Limit Exceeded (72/60)', time: '2 hours ago', driver: 'Alex Rivera' },
-    { id: 'SA-403', reg: 'NY-1029', severity: 'Low', event: 'Idle Warning (>15 mins)', time: '1 day ago', driver: 'M. Vance' }
-  ]
-
-  const complianceDocs = [
-    { id: 'C-201', name: 'Annual DOT Inspection', vehicle: 'FL-7711', expiry: '2026-10-30', status: 'Compliant' },
-    { id: 'C-202', name: 'TX State Registration', vehicle: 'TX-8902', expiry: '2026-07-28', status: 'Expiring Soon' },
-    { id: 'C-203', name: 'Liability Insurance Policy', vehicle: 'All Fleet', expiry: '2027-01-15', status: 'Compliant' },
-    { id: 'C-204', name: 'CA Emission Exemption Permit', vehicle: 'CA-4412', expiry: '2026-06-30', status: 'Expired' }
-  ]
-
-  const fuelData = [
-    { name: 'Jan', efficiency: 8.2 },
-    { name: 'Feb', efficiency: 8.5 },
-    { name: 'Mar', efficiency: 8.9 },
-    { name: 'Apr', efficiency: 8.6 },
-    { name: 'May', efficiency: 9.1 },
-    { name: 'Jun', efficiency: 9.4 }
-  ]
-
-  const roiData = [
-    { name: 'VAN-05', roi: 120 },
-    { name: 'TRK-12', roi: 145 },
-    { name: 'MINI-08', roi: 95 },
-    { name: 'SEMI-02', roi: 160 },
-    { name: 'BOX-04', roi: 110 }
-  ]
 
   const filteredVehicles = vehicles.filter(v => {
     const matchesSearch = v.reg.toLowerCase().includes(vehicleSearch.toLowerCase()) ||
@@ -844,116 +823,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
               </div>
             </div>
           </div>
-        )
-
-
-
-      case 'Safety & Alerts':
-        return (
-          <div className="space-y-6">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Safety & Event Feeds</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="md:col-span-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
-                <CardHeader>
-                  <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Real-Time Safety Event Stream</CardTitle>
-                  <CardDescription className="text-[10px] text-zinc-500">Telemetry notifications on speed thresholds and braking forces.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {safetyAlerts.map((alert) => (
-                    <div key={alert.id} className="p-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800/80 rounded-xl flex items-start justify-between gap-4">
-                      <div className="flex gap-3">
-                        <div className="p-2 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 shrink-0 mt-0.5">
-                          <ShieldAlert className="h-4.5 w-4.5" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-xs text-zinc-900 dark:text-zinc-200">{alert.event}</span>
-                            <span className="px-2.5 py-0.5 text-[9px] font-bold rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-750 dark:text-zinc-300">
-                              {alert.severity}
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-zinc-500 mt-1">Vehicle: {alert.reg} • Driver: {alert.driver}</p>
-                        </div>
-                      </div>
-                      <span className="text-[10px] text-zinc-400 shrink-0 font-medium font-mono">{alert.time}</span>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              {/* Safety Scoreboard */}
-              <Card className="p-4 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl space-y-4">
-                <h4 className="font-bold text-xs text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                  <Users className="h-4 w-4 text-zinc-400" /> Driver Safety Scoreboard
-                </h4>
-                <p className="text-[10px] text-zinc-500">Ranked by compliance score.</p>
-                
-                <div className="space-y-3.5 text-sm">
-                  <div className="flex justify-between items-center text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-2">
-                    <span className="font-medium">1. Priya Patel</span>
-                    <span className="font-bold text-zinc-800 dark:text-zinc-200">98 / 100</span>
-                  </div>
-                  <div className="flex justify-between items-center text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-2">
-                    <span className="font-medium">2. Alex Rivera</span>
-                    <span className="font-bold text-zinc-800 dark:text-zinc-200">92 / 100</span>
-                  </div>
-                  <div className="flex justify-between items-center text-zinc-800 dark:text-zinc-200">
-                    <span className="font-medium">3. Marcus Vance</span>
-                    <span className="font-bold text-zinc-900 dark:text-zinc-200">84 / 100</span>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          </div>
-        )
-
-      case 'Compliance & Docs':
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-2000">Compliance & Registrations</h3>
-              <Button size="sm" className="h-8 text-sm font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 gap-1.5 select-none">
-                <FileCheck className="h-3.5 w-3.5" /> Renew Registrations
-              </Button>
-            </div>
-
-            <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
-              <CardHeader>
-                <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">State Inspections & Certificates</CardTitle>
-                <CardDescription className="text-[10px] text-zinc-500">Regulatory verification dates and DOT compliance status tracker.</CardDescription>
-              </CardHeader>
-              <CardContent className="overflow-x-auto">
-                <table className="w-full text-left text-sm border-collapse">
-                  <thead>
-                    <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 font-medium text-xs">
-                      <th className="py-2.5 px-3">Doc ID</th>
-                      <th className="py-2.5 px-3">Requirement / Certificate</th>
-                      <th className="py-2.5 px-3">Vehicle Scope</th>
-                      <th className="py-2.5 px-3">Expiration Date</th>
-                      <th className="py-2.5 px-3">Compliance Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {complianceDocs.map((doc) => (
-                      <tr key={doc.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 text-xs text-zinc-800 dark:text-zinc-200">
-                        <td className="py-3 px-3 text-xs font-semibold text-xs text-zinc-900 dark:text-zinc-50 text-xs">{doc.id}</td>
-                        <td className="py-3 px-3 text-xs font-medium text-zinc-900 dark:text-zinc-200 text-xs">{doc.name}</td>
-                        <td className="py-3 px-3 text-xs">{doc.vehicle}</td>
-                        <td className="py-3 px-3 text-xs text-[10px] text-zinc-500 dark:text-zinc-400">{doc.expiry}</td>
-                        <td className="py-3 px-3 text-xs">
-                          <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
-                            {doc.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </CardContent>
-            </Card>
-          </div>
-        )
+            )
 
       case 'Settings':
         return (

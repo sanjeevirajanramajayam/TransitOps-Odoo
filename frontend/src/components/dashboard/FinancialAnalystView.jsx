@@ -4,27 +4,15 @@ import { Button } from '@/components/ui/button'
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, BarChart, Bar, Cell } from 'recharts'
 import {
   DollarSign, ArrowUpRight, TrendingUp, Download, Landmark, Fuel,
-  ChevronDown, IndianRupee, Plus, FileText, Calendar, Info, X, Edit2, Trash2
+  ChevronDown, IndianRupee, Plus, FileText, Calendar, Info, X, Edit2, Trash2, AlertTriangle
 } from 'lucide-react'
 
 export default function FinancialAnalystView({ activeSubTab }) {
   const API_BASE = 'http://localhost:5000/api/v1/expenses'
 
-  const financialData = [
-    { name: 'Jan', revenue: 12000, costs: 8000 },
-    { name: 'Feb', revenue: 15000, costs: 9500 },
-    { name: 'Mar', revenue: 18000, costs: 11000 },
-    { name: 'Apr', revenue: 16000, costs: 10500 },
-    { name: 'May', revenue: 21000, costs: 12000 },
-    { name: 'Jun', revenue: 24000, costs: 13500 }
-  ]
-
-  const expenseBreakdown = [
-    { name: 'Fuel Logs', value: 5400, color: '#18181b' },
-    { name: 'Maintenance', value: 3100, color: '#3f3f46' },
-    { name: 'Tolls & Fees', value: 1200, color: '#71717a' },
-    { name: 'Insurance', value: 1800, color: '#a1a1aa' }
-  ]
+  // Cleared placeholder data
+  const financialData = []
+  const expenseBreakdown = []
 
   // States for CRUD Logs - initialized to empty arrays
   const [expenses, setExpenses] = useState([])
@@ -44,6 +32,11 @@ export default function FinancialAnalystView({ activeSubTab }) {
   const [editingFuelId, setEditingFuelId] = useState(null)
   const [editingExpenseId, setEditingExpenseId] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Delete confirmation modal state
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [deleteTargetId, setDeleteTargetId] = useState(null)
+  const [deleteTargetType, setDeleteTargetType] = useState(null) // 'fuel' | 'expense'
 
   // Fuel form fields
   const [fuelReg, setFuelReg] = useState('')
@@ -108,7 +101,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
         setExpenses(mappedExpenses)
       }
     } catch (err) {
-      console.warn("Backend unavailable, using empty state fallback:", err)
+      console.warn("Backend unavailable, running with empty states:", err)
     }
   }
 
@@ -287,31 +280,49 @@ export default function FinancialAnalystView({ activeSubTab }) {
     setIsExpenseFormOpen(true)
   }
 
-  const handleDeleteFuel = async (id) => {
-    try {
-      const res = await fetch(`${API_BASE}/fuel/${id}`, { method: 'DELETE' })
-      const json = await res.json()
-      if (json.success) {
-        fetchLogsFromBackend()
-      } else {
-        setFuelLogs(prev => prev.filter(log => log.id !== id))
-      }
-    } catch (err) {
-      setFuelLogs(prev => prev.filter(log => log.id !== id))
-    }
+  const promptDeleteFuel = (id) => {
+    setDeleteTargetId(id)
+    setDeleteTargetType('fuel')
+    setIsDeleteModalOpen(true)
   }
 
-  const handleDeleteExpense = async (id) => {
+  const promptDeleteExpense = (id) => {
+    setDeleteTargetId(id)
+    setDeleteTargetType('expense')
+    setIsDeleteModalOpen(true)
+  }
+
+  const executeDelete = async () => {
+    if (!deleteTargetId || !deleteTargetType) return
+
     try {
-      const res = await fetch(`${API_BASE}/other/${id}`, { method: 'DELETE' })
-      const json = await res.json()
-      if (json.success) {
-        fetchLogsFromBackend()
+      if (deleteTargetType === 'fuel') {
+        const res = await fetch(`${API_BASE}/fuel/${deleteTargetId}`, { method: 'DELETE' })
+        const json = await res.json()
+        if (json.success) {
+          fetchLogsFromBackend()
+        } else {
+          setFuelLogs(prev => prev.filter(log => log.id !== deleteTargetId))
+        }
       } else {
-        setExpenses(prev => prev.filter(exp => exp.id !== id))
+        const res = await fetch(`${API_BASE}/other/${deleteTargetId}`, { method: 'DELETE' })
+        const json = await res.json()
+        if (json.success) {
+          fetchLogsFromBackend()
+        } else {
+          setExpenses(prev => prev.filter(exp => exp.id !== deleteTargetId))
+        }
       }
     } catch (err) {
-      setExpenses(prev => prev.filter(exp => exp.id !== id))
+      if (deleteTargetType === 'fuel') {
+        setFuelLogs(prev => prev.filter(log => log.id !== deleteTargetId))
+      } else {
+        setExpenses(prev => prev.filter(exp => exp.id !== deleteTargetId))
+      }
+    } finally {
+      setIsDeleteModalOpen(false)
+      setDeleteTargetId(null)
+      setDeleteTargetType(null)
     }
   }
 
@@ -353,6 +364,33 @@ export default function FinancialAnalystView({ activeSubTab }) {
                 <Plus className="h-3.5 w-3.5 mr-1" /> Log Expense
               </Button>
             </div>
+
+            {/* Modal for Delete Confirmation */}
+            {isDeleteModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                <Card className="w-full max-w-sm border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xl rounded-xl p-5 space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-rose-500/10 text-rose-600 rounded-lg shrink-0">
+                      <AlertTriangle className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Confirm Deletion</h4>
+                      <p className="text-xs text-zinc-500 leading-relaxed">
+                        Are you sure you want to delete this {deleteTargetType === 'fuel' ? 'fuel purchase log' : 'operating expense log'}? This action is permanent and cannot be undone.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2.5 pt-2">
+                    <Button variant="outline" onClick={() => { setIsDeleteModalOpen(false); setDeleteTargetId(null); setDeleteTargetType(null); }} className="h-8 text-xs bg-transparent border-zinc-200 dark:border-zinc-800">
+                      Cancel
+                    </Button>
+                    <Button onClick={executeDelete} className="h-8 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white border border-rose-500/10">
+                      Confirm Delete
+                    </Button>
+                  </div>
+                </Card>
+              </div>
+            )}
 
             {/* Modal for Fuel Logging */}
             {isFuelFormOpen && (
@@ -477,7 +515,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                     </div>
                     <div className="flex justify-end gap-2 pt-2">
                       <Button type="button" variant="outline" onClick={() => { setIsExpenseFormOpen(false); setEditingExpenseId(null); }} disabled={isSubmitting} className="h-8 text-xs bg-transparent border-zinc-200 dark:border-zinc-800">Cancel</Button>
-                      <Button type="submit" size="sm" disabled={isSubmitting} className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-955">
+                      <Button type="submit" size="sm" disabled={isSubmitting} className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950">
                         {isSubmitting ? 'Logging...' : editingExpenseId ? 'Save Changes' : 'Add Expense Log'}
                       </Button>
                     </div>
@@ -530,7 +568,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                                   <Edit2 className="h-3.5 w-3.5" />
                                 </Button>
                                 <Button
-                                  onClick={() => handleDeleteFuel(log.id)}
+                                  onClick={() => promptDeleteFuel(log.id)}
                                   size="icon"
                                   variant="ghost"
                                   className="h-7 w-7 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 bg-transparent"
@@ -595,7 +633,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                                   <Edit2 className="h-3.5 w-3.5" />
                                 </Button>
                                 <Button
-                                  onClick={() => handleDeleteExpense(e.id)}
+                                  onClick={() => promptDeleteExpense(e.id)}
                                   size="icon"
                                   variant="ghost"
                                   className="h-7 w-7 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 bg-transparent"
@@ -619,7 +657,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                 const totalOpsCost = totalFuelCost + totalExpCost;
 
                 return (
-                  <Card className="border-zinc-250 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-950/40 rounded-xl p-5 border shadow-sm">
+                  <Card className="border-zinc-250 dark:border-zinc-850 bg-zinc-50 dark:bg-black rounded-xl p-5 border shadow-sm">
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                       <div>
                         <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Operational Cost Aggregation</h4>
@@ -634,9 +672,9 @@ export default function FinancialAnalystView({ activeSubTab }) {
                           <span className="text-zinc-400 block text-[9px] uppercase font-bold">Total Expenses</span>
                           <span className="text-zinc-900 dark:text-zinc-100">₹{totalExpCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </div>
-                        <div className="px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-955 border border-zinc-200 dark:border-zinc-800">
-                          <span className="text-zinc-400 dark:text-zinc-500 block text-[9px] uppercase font-bold">Total Operational Cost</span>
-                          <span className="text-xs font-bold">₹{totalOpsCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                        <div className="px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black border border-zinc-200 dark:border-zinc-800">
+                          <span className="text-zinc-450 dark:text-zinc-500 block text-[9px] uppercase font-bold">Total Operational Cost</span>
+                          <span className="text-xs font-bold text-white dark:text-black">₹{totalOpsCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </div>
                       </div>
                     </div>
@@ -745,7 +783,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
               </h4>
               <div className="p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl">
                 <span className="text-[10px] text-zinc-400 uppercase block leading-none">Net Fleet MPG</span>
-                <span className="text-lg font-black text-zinc-900 dark:text-zinc-50 block mt-1.5">10.4 MPG</span>
+                <span className="text-lg font-black text-zinc-900 dark:text-zinc-55 block mt-1.5">10.4 MPG</span>
               </div>
               <p className="text-[10px] text-zinc-500 leading-relaxed">
                 Overall heavy vehicle and commercial van averages are within 4% of targeted fuel card limits.

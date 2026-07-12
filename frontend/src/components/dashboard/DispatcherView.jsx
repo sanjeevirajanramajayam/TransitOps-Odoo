@@ -90,6 +90,58 @@ export default function DispatcherView({ activeSubTab }) {
     fetchData()
   }, [])
 
+  const fetchBackendData = async () => {
+    try {
+      const vRes = await fetch('http://localhost:5000/api/v1/vehicles')
+      const vJson = await vRes.json()
+      if (vJson.success) {
+        setVehicles(vJson.data.map(v => ({
+          id: v.id,
+          reg: v.registrationNumber,
+          model: v.modelName,
+          type: v.vehicleType,
+          cap: `${v.maxLoadCapacity.toLocaleString()} kg`,
+          odo: `${v.currentOdometer.toLocaleString()} km`,
+          status: v.status === 'OnTrip' ? 'On Trip' : v.status === 'InShop' ? 'In Shop' : v.status,
+          img: v.vehicleType === 'Van' ? '/van.png' : v.vehicleType === 'Truck' ? '/truck.png' : v.vehicleType === 'Semi' ? '/semi.png' : '/box_truck.png'
+        })))
+      }
+
+      const dRes = await fetch('http://localhost:5000/api/v1/drivers')
+      const dJson = await dRes.json()
+      if (dJson.success) {
+        setDrivers(dJson.data.map(d => ({
+          id: d.id,
+          name: d.name,
+          status: d.status === 'OnTrip' ? 'On Trip' : d.status === 'OffDuty' ? 'Off Duty' : d.status,
+          safetyScore: d.safetyScore || 100
+        })))
+      }
+
+      const tRes = await fetch('http://localhost:5000/api/v1/trips')
+      const tJson = await tRes.json()
+      if (tJson.success) {
+        setTrips(tJson.data.map(t => ({
+          id: t.id,
+          source: t.source,
+          dest: t.destination,
+          vehicle: t.vehicle?.registrationNumber || 'Unknown',
+          driver: t.driver?.name || 'Unknown',
+          weight: `${t.cargoWeight} kg`,
+          status: t.status === 'OnTrip' ? 'On Trip' : t.status
+        })))
+      }
+    } catch (err) {
+      console.warn("Backend unavailable, running in local fallback mode:", err)
+    }
+  }
+
+  useEffect(() => {
+    if (activeSubTab === 'Fleet' || activeSubTab === 'Trips') {
+      fetchBackendData()
+    }
+  }, [activeSubTab])
+
   // Handle Create or Update Submit
   const handleTripSubmit = async (e) => {
     e.preventDefault()
@@ -317,27 +369,25 @@ export default function DispatcherView({ activeSubTab }) {
 
   return (
     <div className="space-y-6">
-      {/* Fleet Tab (Just a View) */}
       {activeSubTab === 'Fleet' && (
         <div className="space-y-6">
-          <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
-            <div className="relative w-full md:w-80">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
-              <input
-                type="text"
-                placeholder="Search registration or model..."
-                value={vehicleSearch}
-                onChange={(e) => setVehicleSearch(e.target.value)}
-                className="pl-9 pr-4 py-2 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-500"
-              />
-            </div>
+            <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
+              <div className="relative w-full md:w-80">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
+                <input
+                  type="text"
+                  placeholder="Search registration or model..."
+                  value={vehicleSearch}
+                  onChange={(e) => setVehicleSearch(e.target.value)}
+                  className="pl-9 pr-4 py-2 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-705 dark:text-zinc-300 focus:outline-none"
+                />
+              </div>
 
-            <div className="flex gap-3 w-full md:w-auto justify-end items-center">
-              <div className="relative w-36">
+              <div className="relative w-full md:w-40">
                 <select
                   value={vehicleStatusFilter}
                   onChange={(e) => setVehicleStatusFilter(e.target.value)}
-                  className="appearance-none pl-3 pr-8 py-1.5 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none"
+                  className="appearance-none pl-3 pr-8 py-2 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-705 dark:text-zinc-300 focus:outline-none"
                 >
                   <option value="All">Status: All</option>
                   <option value="Available">Available</option>
@@ -345,10 +395,9 @@ export default function DispatcherView({ activeSubTab }) {
                   <option value="In Shop">In Shop</option>
                   <option value="Retired">Retired</option>
                 </select>
-                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
               </div>
             </div>
-          </div>
 
           {loading ? (
             <p className="text-xs text-zinc-500">Loading fleet data...</p>
@@ -412,31 +461,12 @@ export default function DispatcherView({ activeSubTab }) {
             </Button>
           </div>
 
-          {/* Form Modal / Dropdown segment */}
-          {isFormOpen && (
-            <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">
-                    {editingTripId ? 'Edit Trip Settings' : 'New Trip Dispatch Form'}
-                  </CardTitle>
-                  <CardDescription className="text-xs text-zinc-500">
-                    Configure trip parameters, safety restrictions, and route details.
-                  </CardDescription>
-                </div>
-                <Button variant="ghost" size="icon" onClick={resetForm} className="h-7 w-7 rounded-full bg-transparent text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">
-                  <X className="h-4 w-4" />
-                </Button>
-              </CardHeader>
-              <form onSubmit={handleTripSubmit}>
-                <CardContent className="space-y-4">
-                  {error && (
-                    <div className="p-3 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-rose-500 flex items-start gap-2.5">
-                      <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                      <span>{error}</span>
-                    </div>
-                  )}
+            {success && <div className="p-3 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-emerald-500">{success}</div>}
 
+          {isFormOpen && (
+            <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
+              <form onSubmit={handleTripSubmit}>
+                <CardContent className="p-6 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-xs uppercase font-bold text-zinc-400">Trip Origin (Source)</label>
