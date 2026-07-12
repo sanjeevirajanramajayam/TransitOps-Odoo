@@ -10,11 +10,11 @@ import {
 
 export default function FleetManagerView({ activeSubTab, setActiveTab }) {
   const [vehicles, setVehicles] = useState([
-    { id: 1, reg: 'TX-8902', model: 'Ford Transit', type: 'Van', cap: '3,500 lbs', odo: '45,200 mi', status: 'Available' },
-    { id: 2, reg: 'CA-4412', model: 'Freightliner M2', type: 'Truck', cap: '15,000 lbs', odo: '120,400 mi', status: 'On Trip' },
-    { id: 3, reg: 'NY-1029', model: 'Ram ProMaster', type: 'Van', cap: '4,000 lbs', odo: '28,100 mi', status: 'In Shop' },
-    { id: 4, reg: 'FL-7711', model: 'Volvo VNL 860', type: 'Semi', cap: '45,000 lbs', odo: '310,000 mi', status: 'Available' },
-    { id: 5, reg: 'IL-5050', model: 'Isuzu NPR', type: 'Box Truck', cap: '10,000 lbs', odo: '95,300 mi', status: 'Retired' }
+    { id: 1, reg: 'TX-8902', model: 'Ford Transit', type: 'Van', cap: '3,500 kg', odo: '45,200 mi', status: 'Available' },
+    { id: 2, reg: 'CA-4412', model: 'Freightliner M2', type: 'Truck', cap: '15,000 kg', odo: '120,400 mi', status: 'On Trip' },
+    { id: 3, reg: 'NY-1029', model: 'Ram ProMaster', type: 'Van', cap: '4,000 kg', odo: '28,100 mi', status: 'In Shop' },
+    { id: 4, reg: 'FL-7711', model: 'Volvo VNL 860', type: 'Semi', cap: '45,000 kg', odo: '310,000 mi', status: 'Available' },
+    { id: 5, reg: 'IL-5050', model: 'Isuzu NPR', type: 'Box Truck', cap: '10,000 kg', odo: '95,300 mi', status: 'Retired' }
   ])
 
   const [driversList, setDriversList] = useState([
@@ -38,8 +38,8 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
   const [dispatchSuccess, setDispatchSuccess] = useState('')
 
   const [activeTrips, setActiveTrips] = useState([
-    { id: 1, source: 'Dallas, TX', dest: 'Houston, TX', vehicle: 'TX-8902', driver: 'Alex Rivera', weight: '2,800 lbs', status: 'On Trip' },
-    { id: 2, source: 'Los Angeles, CA', dest: 'San Jose, CA', vehicle: 'CA-4412', driver: 'Priya Patel', weight: '11,200 lbs', status: 'Dispatched' }
+    { id: 1, source: 'Dallas, TX', dest: 'Houston, TX', vehicle: 'TX-8902', driver: 'Alex Rivera', weight: '2,800 kg', status: 'On Trip' },
+    { id: 2, source: 'Los Angeles, CA', dest: 'San Jose, CA', vehicle: 'CA-4412', driver: 'Priya Patel', weight: '11,200 kg', status: 'Dispatched' }
   ])
 
   const [vehicleSearch, setVehicleSearch] = useState('')
@@ -162,7 +162,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
     const inputWeight = parseFloat(dispatchWeight)
     const vehicleMaxCap = parseFloat(vehicle.cap.replace(/[^0-9]/g, '')) || 5000
     if (inputWeight > vehicleMaxCap) {
-      setDispatchError(`Capacity Guard: Cargo weight (${inputWeight} lbs) exceeds the vehicle's maximum capacity (${vehicle.cap} for ${vehicle.reg})`)
+      setDispatchError(`Capacity Guard: Cargo weight (${inputWeight} kg) exceeds the vehicle's maximum capacity (${vehicle.cap} for ${vehicle.reg})`)
       return
     }
 
@@ -172,7 +172,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
       dest: dispatchDestination,
       vehicle: vehicle.reg,
       driver: driver.name,
-      weight: `${inputWeight.toLocaleString()} lbs`,
+      weight: `${inputWeight.toLocaleString()} kg`,
       status: 'Dispatched'
     }
 
@@ -999,7 +999,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                       <input 
                         type="text" 
                         required
-                        placeholder="e.g. 3,500 lbs" 
+                        placeholder="e.g. 3,500 kg" 
                         value={newVehicle.cap}
                         onChange={(e) => setNewVehicle({...newVehicle, cap: e.target.value})}
                         className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
@@ -1177,7 +1177,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
           </div>
         )
 
-      case 'Assign Dispatch':
+      case 'Trip':
         return (
           <div className="space-y-6">
             <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Fleet Dispatch Command</h3>
@@ -1225,7 +1225,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs uppercase font-bold text-zinc-400">Cargo Weight (lbs)</label>
+                      <label className="text-xs uppercase font-bold text-zinc-400">Cargo Weight (kg)</label>
                       <input
                         type="number"
                         required
@@ -1245,7 +1245,12 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                         >
                           <option value="">Select vehicle...</option>
                           {vehicles.map((v) => (
-                            <option key={v.id} value={v.id}>
+                            <option
+                              key={v.id}
+                              value={v.id}
+                              disabled={v.status !== 'Available'}
+                              className={v.status !== 'Available' ? 'text-zinc-400 dark:text-zinc-600 bg-zinc-50 dark:bg-zinc-950/20' : ''}
+                            >
                               {v.reg} ({v.model}) - Max {v.cap} [{v.status}]
                             </option>
                           ))}
@@ -1263,7 +1268,12 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                         >
                           <option value="">Select driver...</option>
                           {driversList.map((d) => (
-                            <option key={d.id} value={d.id}>
+                            <option
+                              key={d.id}
+                              value={d.id}
+                              disabled={d.status !== 'Available'}
+                              className={d.status !== 'Available' ? 'text-zinc-400 dark:text-zinc-600 bg-zinc-50 dark:bg-zinc-950/20' : ''}
+                            >
                               {d.name} - CDL Exp: {d.expiry} [{d.status}]
                             </option>
                           ))}

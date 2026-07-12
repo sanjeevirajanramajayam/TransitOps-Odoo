@@ -12,7 +12,7 @@ export default function DriverView({ activeSubTab }) {
       dest: 'Houston, TX',
       vehicle: 'TX-8902',
       vehicleModel: 'Ford Transit',
-      weight: '2,800 lbs',
+      weight: '2,800 kg',
       assignedBy: 'Fleet Ops HQ',
       assignedAt: '2026-07-12 09:15 AM',
       status: 'Pending'
@@ -23,7 +23,7 @@ export default function DriverView({ activeSubTab }) {
       dest: 'San Antonio, TX',
       vehicle: 'FL-7711',
       vehicleModel: 'Volvo VNL 860',
-      weight: '18,500 lbs',
+      weight: '18,500 kg',
       assignedBy: 'Fleet Ops HQ',
       assignedAt: '2026-07-12 10:30 AM',
       status: 'Pending'
@@ -34,7 +34,7 @@ export default function DriverView({ activeSubTab }) {
       dest: 'Tucson, AZ',
       vehicle: 'CA-4412',
       vehicleModel: 'Freightliner M2',
-      weight: '9,200 lbs',
+      weight: '9,200 kg',
       assignedBy: 'Fleet Ops HQ',
       assignedAt: '2026-07-11 03:45 PM',
       status: 'Pending'
@@ -43,7 +43,7 @@ export default function DriverView({ activeSubTab }) {
 
   // Accepted active trips
   const [activeTrips, setActiveTrips] = useState([
-    { id: 1, source: 'Los Angeles, CA', dest: 'San Jose, CA', vehicle: 'CA-4412', weight: '11,200 lbs', status: 'On Trip', acceptedAt: '2026-07-11 08:00 AM' }
+    { id: 1, source: 'Los Angeles, CA', dest: 'San Jose, CA', vehicle: 'CA-4412', weight: '11,200 kg', status: 'On Trip', acceptedAt: '2026-07-11 08:00 AM' }
   ])
 
   // Rejection state
