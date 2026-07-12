@@ -76,8 +76,7 @@ export default function App() {
         return [
           { name: 'Fuel and Expenses', icon: Landmark },
           { name: 'ROI Reports', icon: TrendingUp },
-          { name: 'Fuel Optimization', icon: Fuel },
-          { name: 'Settings', icon: Settings }
+          { name: 'Fuel Optimization', icon: Fuel }
         ]
       default:
         return []
