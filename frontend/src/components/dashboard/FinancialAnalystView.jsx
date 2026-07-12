@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, BarChart, Bar, Cell } from 'recharts'
 import {
   DollarSign, ArrowUpRight, TrendingUp, Download, Landmark, Fuel,
-  ChevronDown, IndianRupee, Plus, FileText, Calendar, Info, X
+  ChevronDown, IndianRupee, Plus, FileText, Calendar, Info, X, Edit2
 } from 'lucide-react'
 
 export default function FinancialAnalystView({ activeSubTab }) {
@@ -41,6 +41,8 @@ export default function FinancialAnalystView({ activeSubTab }) {
   // Form states
   const [isFuelFormOpen, setIsFuelFormOpen] = useState(false)
   const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false)
+  const [editingFuelId, setEditingFuelId] = useState(null)
+  const [editingExpenseId, setEditingExpenseId] = useState(null)
 
   // Fuel form fields
   const [fuelReg, setFuelReg] = useState('')
@@ -60,15 +62,27 @@ export default function FinancialAnalystView({ activeSubTab }) {
     e.preventDefault()
     if (!fuelReg || !fuelDate || !fuelVolume || !fuelCost || !fuelMpg) return
     
-    const newLog = {
-      id: fuelLogs.length + 1,
-      reg: fuelReg,
-      date: fuelDate,
-      volume: `${fuelVolume} L`,
-      cost: `₹${parseFloat(fuelCost).toLocaleString()}`,
-      mpg: `${fuelMpg} km/l`
+    if (editingFuelId) {
+      setFuelLogs(prev => prev.map(log => log.id === editingFuelId ? {
+        ...log,
+        reg: fuelReg,
+        date: fuelDate,
+        volume: fuelVolume.toString().endsWith(' L') ? fuelVolume : `${fuelVolume} L`,
+        cost: fuelCost.toString().startsWith('₹') ? fuelCost : `₹${parseFloat(fuelCost).toLocaleString()}`,
+        mpg: fuelMpg.toString().endsWith(' km/l') ? fuelMpg : `${fuelMpg} km/l`
+      } : log))
+      setEditingFuelId(null)
+    } else {
+      const newLog = {
+        id: Date.now(),
+        reg: fuelReg,
+        date: fuelDate,
+        volume: `${fuelVolume} L`,
+        cost: `₹${parseFloat(fuelCost).toLocaleString()}`,
+        mpg: `${fuelMpg} km/l`
+      }
+      setFuelLogs([newLog, ...fuelLogs])
     }
-    setFuelLogs([newLog, ...fuelLogs])
     setIsFuelFormOpen(false)
     clearFuelForm()
   }
@@ -77,18 +91,52 @@ export default function FinancialAnalystView({ activeSubTab }) {
     e.preventDefault()
     if (!expReg || !expDesc || !expAmount || !expDate) return
 
-    const newExp = {
-      id: expenses.length + 1,
-      ref: `EXP-${Math.floor(1000 + Math.random() * 9000)}`,
-      vehicle: expReg,
-      type: expType,
-      amount: parseFloat(expAmount),
-      date: expDate,
-      desc: expDesc
+    if (editingExpenseId) {
+      setExpenses(prev => prev.map(exp => exp.id === editingExpenseId ? {
+        ...exp,
+        vehicle: expReg,
+        type: expType,
+        amount: parseFloat(expAmount),
+        date: expDate,
+        desc: expDesc
+      } : exp))
+      setEditingExpenseId(null)
+    } else {
+      const newExp = {
+        id: Date.now(),
+        ref: `EXP-${Math.floor(1000 + Math.random() * 9000)}`,
+        vehicle: expReg,
+        type: expType,
+        amount: parseFloat(expAmount),
+        date: expDate,
+        desc: expDesc
+      }
+      setExpenses([newExp, ...expenses])
     }
-    setExpenses([newExp, ...expenses])
     setIsExpenseFormOpen(false)
     clearExpenseForm()
+  }
+
+  const handleEditFuelClick = (log) => {
+    setEditingFuelId(log.id)
+    setFuelReg(log.reg)
+    setFuelDate(log.date)
+    setFuelVolume(log.volume.replace(/[^0-9.]/g, ''))
+    setFuelCost(log.cost.replace(/[^0-9.]/g, ''))
+    setFuelMpg(log.mpg.replace(' km/l', ''))
+    setIsExpenseFormOpen(false)
+    setIsFuelFormOpen(true)
+  }
+
+  const handleEditExpenseClick = (exp) => {
+    setEditingExpenseId(exp.id)
+    setExpReg(exp.vehicle)
+    setExpType(exp.type)
+    setExpDesc(exp.desc)
+    setExpAmount(exp.amount)
+    setExpDate(exp.date)
+    setIsFuelFormOpen(false)
+    setIsExpenseFormOpen(true)
   }
 
   const clearFuelForm = () => {
@@ -115,100 +163,123 @@ export default function FinancialAnalystView({ activeSubTab }) {
             {/* Scrolled / High Z-Index top right action buttons */}
             <div className="fixed top-[72px] right-8 z-50 flex gap-2.5 bg-white/70 dark:bg-zinc-950/70 backdrop-blur border border-zinc-200 dark:border-zinc-800 p-2 rounded-xl shadow-lg">
               <Button
-                onClick={() => { setIsExpenseFormOpen(false); setIsFuelFormOpen(true); }}
+                onClick={() => { setEditingFuelId(null); clearFuelForm(); setIsExpenseFormOpen(false); setIsFuelFormOpen(true); }}
                 size="sm"
-                className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 select-none"
+                className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-955 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 select-none"
               >
                 <Fuel className="h-3.5 w-3.5 mr-1" /> Log Fuel
               </Button>
               <Button
-                onClick={() => { setIsFuelFormOpen(false); setIsExpenseFormOpen(true); }}
+                onClick={() => { setEditingExpenseId(null); clearExpenseForm(); setIsFuelFormOpen(false); setIsExpenseFormOpen(true); }}
                 size="sm"
-                className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 select-none"
+                className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-955 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 select-none"
               >
                 <Plus className="h-3.5 w-3.5 mr-1" /> Log Expense
               </Button>
             </div>
 
-            {/* Forms overlays */}
+            {/* Modal for Fuel Logging */}
             {isFuelFormOpen && (
-              <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-md rounded-xl p-5 space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Log Fuel Purchase</h3>
-                  <Button variant="ghost" size="icon" onClick={() => setIsFuelFormOpen(false)} className="h-7 w-7 rounded-full bg-transparent text-zinc-400">
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <form onSubmit={handleAddFuel} className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-zinc-400">Vehicle Reg</label>
-                    <input type="text" placeholder="e.g. TX-8902" value={fuelReg} onChange={(e) => setFuelReg(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+                <Card className="w-full max-w-lg border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xl rounded-xl p-6 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
+                      {editingFuelId ? 'Edit Fuel Purchase' : 'Log Fuel Purchase'}
+                    </h3>
+                    <Button variant="ghost" size="icon" onClick={() => { setIsFuelFormOpen(false); setEditingFuelId(null); }} className="h-7 w-7 rounded-full bg-transparent text-zinc-400">
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-zinc-400">Date</label>
-                    <input type="date" value={fuelDate} onChange={(e) => setFuelDate(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-zinc-400">Volume (Liters)</label>
-                    <input type="number" step="any" placeholder="e.g. 50" value={fuelVolume} onChange={(e) => setFuelVolume(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-zinc-400">Total Cost (₹)</label>
-                    <input type="number" step="any" placeholder="e.g. 4500" value={fuelCost} onChange={(e) => setFuelCost(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-zinc-400">MPG / Efficiency</label>
-                    <input type="text" placeholder="e.g. 12 km/l" value={fuelMpg} onChange={(e) => setFuelMpg(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
-                  </div>
-                  <div className="md:col-span-5 flex justify-end gap-2 pt-2">
-                    <Button type="submit" size="sm" className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950">Add Fuel Log</Button>
-                  </div>
-                </form>
-              </Card>
+                  <form onSubmit={handleAddFuel} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase text-zinc-400">Vehicle Reg</label>
+                        <input type="text" placeholder="e.g. TX-8902" value={fuelReg} onChange={(e) => setFuelReg(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase text-zinc-400">Date</label>
+                        <input type="date" value={fuelDate} onChange={(e) => setFuelDate(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase text-zinc-400">Volume (Liters)</label>
+                        <input type="number" step="any" placeholder="e.g. 50" value={fuelVolume} onChange={(e) => setFuelVolume(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase text-zinc-400">Total Cost (₹)</label>
+                        <input type="number" step="any" placeholder="e.g. 4500" value={fuelCost} onChange={(e) => setFuelCost(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase text-zinc-400">MPG / Efficiency</label>
+                        <input type="text" placeholder="e.g. 12 km/l" value={fuelMpg} onChange={(e) => setFuelMpg(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2">
+                      <Button type="button" variant="outline" onClick={() => { setIsFuelFormOpen(false); setEditingFuelId(null); }} className="h-8 text-xs bg-transparent border-zinc-200 dark:border-zinc-800">Cancel</Button>
+                      <Button type="submit" size="sm" className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950">
+                        {editingFuelId ? 'Save Changes' : 'Add Fuel Log'}
+                      </Button>
+                    </div>
+                  </form>
+                </Card>
+              </div>
             )}
 
+            {/* Modal for Expense Logging */}
             {isExpenseFormOpen && (
-              <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-md rounded-xl p-5 space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Log Operating Expense</h3>
-                  <Button variant="ghost" size="icon" onClick={() => setIsExpenseFormOpen(false)} className="h-7 w-7 rounded-full bg-transparent text-zinc-400">
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <form onSubmit={handleAddExpense} className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-zinc-400">Vehicle Reg</label>
-                    <input type="text" placeholder="e.g. CA-4412" value={expReg} onChange={(e) => setExpReg(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+                <Card className="w-full max-w-lg border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xl rounded-xl p-6 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
+                      {editingExpenseId ? 'Edit Operating Expense' : 'Log Operating Expense'}
+                    </h3>
+                    <Button variant="ghost" size="icon" onClick={() => { setIsExpenseFormOpen(false); setEditingExpenseId(null); }} className="h-7 w-7 rounded-full bg-transparent text-zinc-400">
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-zinc-400">Expense Type</label>
-                    <div className="relative">
-                      <select value={expType} onChange={(e) => setExpType(e.target.value)} className="w-full appearance-none px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs">
-                        <option value="Maintenance">Maintenance</option>
-                        <option value="Tolls">Tolls</option>
-                        <option value="Insurance">Insurance</option>
-                        <option value="Permits">Permits</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                  <form onSubmit={handleAddExpense} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase text-zinc-400">Vehicle Reg</label>
+                        <input type="text" placeholder="e.g. CA-4412" value={expReg} onChange={(e) => setExpReg(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase text-zinc-400">Expense Type</label>
+                        <div className="relative">
+                          <select value={expType} onChange={(e) => setExpType(e.target.value)} className="w-full appearance-none px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs">
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Tolls">Tolls</option>
+                            <option value="Insurance">Insurance</option>
+                            <option value="Permits">Permits</option>
+                          </select>
+                          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-zinc-400">Description</label>
-                    <input type="text" placeholder="e.g. Brake pad change" value={expDesc} onChange={(e) => setExpDesc(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-zinc-400">Amount (₹)</label>
-                    <input type="number" placeholder="e.g. 1500" value={expAmount} onChange={(e) => setExpAmount(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-zinc-400">Date</label>
-                    <input type="date" value={expDate} onChange={(e) => setExpDate(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
-                  </div>
-                  <div className="md:col-span-5 flex justify-end gap-2 pt-2">
-                    <Button type="submit" size="sm" className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-955">Add Expense Log</Button>
-                  </div>
-                </form>
-              </Card>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase text-zinc-400">Description</label>
+                      <input type="text" placeholder="e.g. Brake pad change" value={expDesc} onChange={(e) => setExpDesc(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase text-zinc-400">Amount (₹)</label>
+                        <input type="number" placeholder="e.g. 1500" value={expAmount} onChange={(e) => setExpAmount(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase text-zinc-400">Date</label>
+                        <input type="date" value={expDate} onChange={(e) => setExpDate(e.target.value)} required className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs" />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2">
+                      <Button type="button" variant="outline" onClick={() => { setIsExpenseFormOpen(false); setEditingExpenseId(null); }} className="h-8 text-xs bg-transparent border-zinc-200 dark:border-zinc-800">Cancel</Button>
+                      <Button type="submit" size="sm" className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950">
+                        {editingExpenseId ? 'Save Changes' : 'Add Expense Log'}
+                      </Button>
+                    </div>
+                  </form>
+                </Card>
+              </div>
             )}
 
             {/* Stacked row layout (one block per row) for Fuel and Expenses */}
@@ -219,7 +290,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                   <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Fuel Purchase Logbook</CardTitle>
                   <CardDescription className="text-xs text-zinc-500">Telemetry logs of diesel purchases, quantities, and fuel economy metrics.</CardDescription>
                 </CardHeader>
-                <CardContent className="overflow-x-auto">
+                <CardContent className="overflow-x-auto [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-200 dark:[&::-webkit-scrollbar-thumb]:bg-zinc-800 [&::-webkit-scrollbar-thumb]:rounded-full">
                   <table className="w-full text-left text-sm border-collapse">
                     <thead>
                       <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 font-medium text-xs">
@@ -228,6 +299,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                         <th className="py-2.5 px-3">Volume</th>
                         <th className="py-2.5 px-3">Cost</th>
                         <th className="py-2.5 px-3">Efficiency</th>
+                        <th className="py-2.5 px-3 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -238,6 +310,16 @@ export default function FinancialAnalystView({ activeSubTab }) {
                           <td className="py-3 px-3 font-semibold">{log.volume}</td>
                           <td className="py-3 px-3 font-black text-zinc-900 dark:text-zinc-100">{log.cost}</td>
                           <td className="py-3 px-3 font-mono text-[11px] text-zinc-500">{log.mpg}</td>
+                          <td className="py-3 px-3 text-right">
+                            <Button
+                              onClick={() => handleEditFuelClick(log)}
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent"
+                            >
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -251,7 +333,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                   <CardTitle className="text-base text-zinc-900 dark:text-zinc-100">Operational Expenses ledger</CardTitle>
                   <CardDescription className="text-xs text-zinc-500">Record of general operating costs, tolls, permits, and maintenance payouts.</CardDescription>
                 </CardHeader>
-                <CardContent className="overflow-x-auto">
+                <CardContent className="overflow-x-auto [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-200 dark:[&::-webkit-scrollbar-thumb]:bg-zinc-800 [&::-webkit-scrollbar-thumb]:rounded-full">
                   <table className="w-full text-left text-sm border-collapse">
                     <thead>
                       <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 font-medium text-xs">
@@ -261,6 +343,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                         <th className="py-2.5 px-3">Description</th>
                         <th className="py-2.5 px-3">Amount</th>
                         <th className="py-2.5 px-3">Date</th>
+                        <th className="py-2.5 px-3 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -276,6 +359,16 @@ export default function FinancialAnalystView({ activeSubTab }) {
                           <td className="py-3 px-3 text-zinc-500">{e.desc}</td>
                           <td className="py-3 px-3 font-black text-zinc-900 dark:text-zinc-100">₹{e.amount.toLocaleString()}</td>
                           <td className="py-3 px-3 text-zinc-400">{e.date}</td>
+                          <td className="py-3 px-3 text-right">
+                            <Button
+                              onClick={() => handleEditExpenseClick(e)}
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent"
+                            >
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -305,9 +398,9 @@ export default function FinancialAnalystView({ activeSubTab }) {
                           <span className="text-zinc-400 block text-[9px] uppercase font-bold">Total Expenses</span>
                           <span className="text-zinc-900 dark:text-zinc-100">₹{totalExpCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </div>
-                        <div className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 border border-zinc-850">
+                        <div className="px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 border border-zinc-200 dark:border-zinc-800">
                           <span className="text-zinc-400 dark:text-zinc-500 block text-[9px] uppercase font-bold">Total Operational Cost</span>
-                          <span className="text-base font-black">₹{totalOpsCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                          <span className="text-xs font-bold">₹{totalOpsCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </div>
                       </div>
                     </div>
