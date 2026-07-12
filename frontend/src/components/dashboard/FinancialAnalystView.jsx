@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, BarChart, Bar, Cell } from 'recharts'
@@ -8,6 +8,8 @@ import {
 } from 'lucide-react'
 
 export default function FinancialAnalystView({ activeSubTab }) {
+  const API_BASE = 'http://localhost:5000/api/v1/expenses'
+
   const financialData = [
     { name: 'Jan', revenue: 12000, costs: 8000 },
     { name: 'Feb', revenue: 15000, costs: 9500 },
@@ -58,20 +60,108 @@ export default function FinancialAnalystView({ activeSubTab }) {
   const [expAmount, setExpAmount] = useState('')
   const [expDate, setExpDate] = useState('')
 
-  const handleAddFuel = (e) => {
+  // Fetch from Backend
+  const fetchLogsFromBackend = async () => {
+    try {
+      const fuelRes = await fetch(`${API_BASE}/fuel`)
+      const fuelJson = await fuelRes.json()
+      if (fuelJson.success && fuelJson.data.length > 0) {
+        const mappedFuel = fuelJson.data.map(log => ({
+          id: log.id,
+          reg: log.vehicle?.registrationNumber || 'Generic',
+          date: new Date(log.date).toISOString().split('T')[0],
+          volume: `${log.liters} L`,
+          cost: `₹${log.cost.toLocaleString()}`,
+          mpg: `${log.odometerReading} km/l`
+        }))
+        setFuelLogs(mappedFuel)
+      }
+
+      const expRes = await fetch(`${API_BASE}/other`)
+      const expJson = await expRes.json()
+      if (expJson.success && expJson.data.length > 0) {
+        const mappedExpenses = expJson.data.map(exp => ({
+          id: exp.id,
+          ref: `EXP-${exp.id + 9000}`,
+          vehicle: exp.vehicle?.registrationNumber || 'Generic',
+          type: exp.expenseType,
+          amount: exp.amount,
+          date: new Date(exp.date).toISOString().split('T')[0],
+          desc: exp.description || ''
+        }))
+        setExpenses(mappedExpenses)
+      }
+    } catch (err) {
+      console.warn("Backend unavailable, using static fallback logs:", err)
+    }
+  }
+
+  // Load backend data on mount or when tab changes
+  useEffect(() => {
+    if (activeSubTab === 'Fuel and Expenses') {
+      fetchLogsFromBackend()
+    }
+  }, [activeSubTab])
+
+  const handleAddFuel = async (e) => {
     e.preventDefault()
     if (!fuelReg || !fuelDate || !fuelVolume || !fuelCost || !fuelMpg) return
-    
+
+    const cleanVolume = parseFloat(fuelVolume.toString().replace(/[^0-9.]/g, '')) || 0
+    const cleanCost = parseFloat(fuelCost.toString().replace(/[^0-9.]/g, '')) || 0
+    const cleanOdo = parseFloat(fuelMpg.toString().replace(/[^0-9.]/g, '')) || 0
+
+    const payload = {
+      vehicleReg: fuelReg,
+      liters: cleanVolume,
+      cost: cleanCost,
+      odometerReading: cleanOdo,
+      date: fuelDate
+    }
+
+    try {
+      let res
+      if (editingFuelId) {
+        res = await fetch(`${API_BASE}/fuel/${editingFuelId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+      } else {
+        res = await fetch(`${API_BASE}/fuel`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+      }
+
+      const json = await res.json()
+      if (json.success) {
+        fetchLogsFromBackend()
+      } else {
+        // Fallback modification of state locally if backend reports error
+        updateFuelStateLocally()
+      }
+    } catch (err) {
+      console.error(err)
+      updateFuelStateLocally()
+    }
+
+    setIsFuelFormOpen(false)
+    clearFuelForm()
+    setEditingFuelId(null)
+  }
+
+  const updateFuelStateLocally = () => {
     if (editingFuelId) {
       setFuelLogs(prev => prev.map(log => log.id === editingFuelId ? {
         ...log,
         reg: fuelReg,
         date: fuelDate,
-        volume: fuelVolume.toString().endsWith(' L') ? fuelVolume : `${fuelVolume} L`,
-        cost: fuelCost.toString().startsWith('₹') ? fuelCost : `₹${parseFloat(fuelCost).toLocaleString()}`,
-        mpg: fuelMpg.toString().endsWith(' km/l') ? fuelMpg : `${fuelMpg} km/l`
+        volume: `${fuelVolume} L`,
+        cost: `₹${parseFloat(fuelCost).toLocaleString()}`,
+        mpg: `${fuelMpg} km/l`
       } : log))
-      setEditingFuelId(null)
     } else {
       const newLog = {
         id: Date.now(),
@@ -83,14 +173,53 @@ export default function FinancialAnalystView({ activeSubTab }) {
       }
       setFuelLogs([newLog, ...fuelLogs])
     }
-    setIsFuelFormOpen(false)
-    clearFuelForm()
   }
 
-  const handleAddExpense = (e) => {
+  const handleAddExpense = async (e) => {
     e.preventDefault()
     if (!expReg || !expDesc || !expAmount || !expDate) return
 
+    const payload = {
+      vehicleReg: expReg,
+      expenseType: expType,
+      amount: parseFloat(expAmount),
+      description: expDesc,
+      date: expDate
+    }
+
+    try {
+      let res
+      if (editingExpenseId) {
+        res = await fetch(`${API_BASE}/other/${editingExpenseId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+      } else {
+        res = await fetch(`${API_BASE}/other`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+      }
+
+      const json = await res.json()
+      if (json.success) {
+        fetchLogsFromBackend()
+      } else {
+        updateExpenseStateLocally()
+      }
+    } catch (err) {
+      console.error(err)
+      updateExpenseStateLocally()
+    }
+
+    setIsExpenseFormOpen(false)
+    clearExpenseForm()
+    setEditingExpenseId(null)
+  }
+
+  const updateExpenseStateLocally = () => {
     if (editingExpenseId) {
       setExpenses(prev => prev.map(exp => exp.id === editingExpenseId ? {
         ...exp,
@@ -100,7 +229,6 @@ export default function FinancialAnalystView({ activeSubTab }) {
         date: expDate,
         desc: expDesc
       } : exp))
-      setEditingExpenseId(null)
     } else {
       const newExp = {
         id: Date.now(),
@@ -113,8 +241,6 @@ export default function FinancialAnalystView({ activeSubTab }) {
       }
       setExpenses([newExp, ...expenses])
     }
-    setIsExpenseFormOpen(false)
-    clearExpenseForm()
   }
 
   const handleEditFuelClick = (log) => {
@@ -139,12 +265,32 @@ export default function FinancialAnalystView({ activeSubTab }) {
     setIsExpenseFormOpen(true)
   }
 
-  const handleDeleteFuel = (id) => {
-    setFuelLogs(prev => prev.filter(log => log.id !== id))
+  const handleDeleteFuel = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE}/fuel/${id}`, { method: 'DELETE' })
+      const json = await res.json()
+      if (json.success) {
+        fetchLogsFromBackend()
+      } else {
+        setFuelLogs(prev => prev.filter(log => log.id !== id))
+      }
+    } catch (err) {
+      setFuelLogs(prev => prev.filter(log => log.id !== id))
+    }
   }
 
-  const handleDeleteExpense = (id) => {
-    setExpenses(prev => prev.filter(exp => exp.id !== id))
+  const handleDeleteExpense = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE}/other/${id}`, { method: 'DELETE' })
+      const json = await res.json()
+      if (json.success) {
+        fetchLogsFromBackend()
+      } else {
+        setExpenses(prev => prev.filter(exp => exp.id !== id))
+      }
+    } catch (err) {
+      setExpenses(prev => prev.filter(exp => exp.id !== id))
+    }
   }
 
   const clearFuelForm = () => {
@@ -225,7 +371,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                     </div>
                     <div className="flex justify-end gap-2 pt-2">
                       <Button type="button" variant="outline" onClick={() => { setIsFuelFormOpen(false); setEditingFuelId(null); }} className="h-8 text-xs bg-transparent border-zinc-200 dark:border-zinc-800">Cancel</Button>
-                      <Button type="submit" size="sm" className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-955">
+                      <Button type="submit" size="sm" className="h-8 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950">
                         {editingFuelId ? 'Save Changes' : 'Add Fuel Log'}
                       </Button>
                     </div>
@@ -426,7 +572,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                           <span className="text-zinc-400 block text-[9px] uppercase font-bold">Total Expenses</span>
                           <span className="text-zinc-900 dark:text-zinc-100">₹{totalExpCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </div>
-                        <div className="px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 border border-zinc-200 dark:border-zinc-800">
+                        <div className="px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-955 border border-zinc-200 dark:border-zinc-800">
                           <span className="text-zinc-400 dark:text-zinc-500 block text-[9px] uppercase font-bold">Total Operational Cost</span>
                           <span className="text-xs font-bold">₹{totalOpsCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </div>

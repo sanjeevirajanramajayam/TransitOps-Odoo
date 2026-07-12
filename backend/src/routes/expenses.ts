@@ -7,42 +7,96 @@ import prisma from '../db'
 const router = Router()
 
 const createFuelLogSchema = z.object({
-  vehicleId: z.number().int().positive(),
+  vehicleReg: z.string().min(2),
   liters: z.number().positive(),
   cost: z.number().positive(),
-  odometerReading: z.number().positive()
+  odometerReading: z.number().positive(),
+  date: z.string().optional()
 })
 
 const createExpenseSchema = z.object({
-  vehicleId: z.number().int().positive(),
+  vehicleReg: z.string().min(2),
   expenseType: z.string().min(2),
   amount: z.number().positive(),
-  description: z.string().optional()
+  description: z.string().optional(),
+  date: z.string().optional()
 })
 
+// Helper to get or create vehicle by registration number
+async function getOrCreateVehicle(reg: string) {
+  let vehicle = await prisma.transitVehicle.findUnique({
+    where: { registrationNumber: reg }
+  })
+  if (!vehicle) {
+    vehicle = await prisma.transitVehicle.create({
+      data: {
+        registrationNumber: reg,
+        modelName: 'Generic Fleet Vehicle',
+        vehicleType: 'Truck',
+        maxLoadCapacity: 10000,
+        currentOdometer: 50000,
+        acquisitionCost: 35000,
+        status: 'Available'
+      }
+    })
+  }
+  return vehicle
+}
+
+// GET all fuel logs
+router.get('/fuel', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const logs = await prisma.transitFuelLog.findMany({
+      include: {
+        vehicle: true
+      },
+      orderBy: {
+        date: 'desc'
+      }
+    })
+    return sendResponse(res, 200, true, 'Fuel logs retrieved successfully', logs)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// GET all other expenses
+router.get('/other', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const expenses = await prisma.transitExpense.findMany({
+      include: {
+        vehicle: true
+      },
+      orderBy: {
+        date: 'desc'
+      }
+    })
+    return sendResponse(res, 200, true, 'Expenses retrieved successfully', expenses)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// POST a new fuel log
 router.post('/fuel', validateRequest(createFuelLogSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { vehicleId, liters, cost, odometerReading } = req.body
+    const { vehicleReg, liters, cost, odometerReading, date } = req.body
 
-    const vehicle = await prisma.transitVehicle.findUnique({
-      where: { id: vehicleId }
-    })
-    if (!vehicle) {
-      return sendResponse(res, 404, false, 'Vehicle not found')
-    }
+    const vehicle = await getOrCreateVehicle(vehicleReg)
 
     const log = await prisma.$transaction(async (tx) => {
       const createdLog = await tx.transitFuelLog.create({
         data: {
-          vehicleId,
+          vehicleId: vehicle.id,
           liters,
           cost,
-          odometerReading
+          odometerReading,
+          date: date ? new Date(date) : new Date()
         }
       })
 
       await tx.transitVehicle.update({
-        where: { id: vehicleId },
+        where: { id: vehicle.id },
         data: { currentOdometer: odometerReading }
       })
 
@@ -55,23 +109,20 @@ router.post('/fuel', validateRequest(createFuelLogSchema), async (req: Request, 
   }
 })
 
+// POST a new operating expense
 router.post('/other', validateRequest(createExpenseSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { vehicleId, expenseType, amount, description } = req.body
+    const { vehicleReg, expenseType, amount, description, date } = req.body
 
-    const vehicle = await prisma.transitVehicle.findUnique({
-      where: { id: vehicleId }
-    })
-    if (!vehicle) {
-      return sendResponse(res, 404, false, 'Vehicle not found')
-    }
+    const vehicle = await getOrCreateVehicle(vehicleReg)
 
     const expense = await prisma.transitExpense.create({
       data: {
-        vehicleId,
+        vehicleId: vehicle.id,
         expenseType,
         amount,
-        description
+        description,
+        date: date ? new Date(date) : new Date()
       }
     })
 
@@ -81,12 +132,98 @@ router.post('/other', validateRequest(createExpenseSchema), async (req: Request,
   }
 })
 
+// PUT (update) fuel log
+router.put('/fuel/:id', validateRequest(createFuelLogSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params
+    const { vehicleReg, liters, cost, odometerReading, date } = req.body
+
+    const vehicle = await getOrCreateVehicle(vehicleReg)
+
+    const log = await prisma.$transaction(async (tx) => {
+      const updatedLog = await tx.transitFuelLog.update({
+        where: { id: parseInt(id) },
+        data: {
+          vehicleId: vehicle.id,
+          liters,
+          cost,
+          odometerReading,
+          date: date ? new Date(date) : new Date()
+        }
+      })
+
+      await tx.transitVehicle.update({
+        where: { id: vehicle.id },
+        data: { currentOdometer: odometerReading }
+      })
+
+      return updatedLog
+    })
+
+    return sendResponse(res, 200, true, 'Fuel log updated successfully', log)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// PUT (update) operating expense
+router.put('/other/:id', validateRequest(createExpenseSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params
+    const { vehicleReg, expenseType, amount, description, date } = req.body
+
+    const vehicle = await getOrCreateVehicle(vehicleReg)
+
+    const expense = await prisma.transitExpense.update({
+      where: { id: parseInt(id) },
+      data: {
+        vehicleId: vehicle.id,
+        expenseType,
+        amount,
+        description,
+        date: date ? new Date(date) : new Date()
+      }
+    })
+
+    return sendResponse(res, 200, true, 'Expense updated successfully', expense)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// DELETE a fuel log
+router.delete('/fuel/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params
+    await prisma.transitFuelLog.delete({
+      where: { id: parseInt(id) }
+    })
+    return sendResponse(res, 200, true, 'Fuel log deleted successfully')
+  } catch (err) {
+    next(err)
+  }
+})
+
+// DELETE an operating expense
+router.delete('/other/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params
+    await prisma.transitExpense.delete({
+      where: { id: parseInt(id) }
+    })
+    return sendResponse(res, 200, true, 'Expense deleted successfully')
+  } catch (err) {
+    next(err)
+  }
+})
+
+// GET Operational Cost Summary for a vehicle
 router.get('/vehicle/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params
 
     const vehicle = await prisma.transitVehicle.findUnique({
-      where: { id: parseInt(id as string) }
+      where: { id: parseInt(id) }
     })
     if (!vehicle) {
       return sendResponse(res, 404, false, 'Vehicle not found')
@@ -112,7 +249,7 @@ router.get('/vehicle/:id', async (req: Request, res: Response, next: NextFunctio
     const totalOther = expenseSum._sum.amount || 0
     const totalOperationalCost = totalFuel + totalMaintenance + totalOther
 
-    return sendResponse(res, 200, true, `Aggregate operational costs for vehicle ${id} computed successfully`, {
+    return sendResponse(res, 200, true, `Aggregate operational costs computed successfully`, {
       vehicleId: vehicle.id,
       totalFuel,
       totalMaintenance,
