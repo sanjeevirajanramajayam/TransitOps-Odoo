@@ -67,10 +67,102 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
     }
   }
 
+  // Maintenance states & API integration
+  const [maintenanceLogs, setMaintenanceLogs] = useState([])
+  const [isMaintFormOpen, setIsMaintFormOpen] = useState(false)
+  const [maintVehicleId, setMaintVehicleId] = useState('')
+  const [maintDescription, setMaintDescription] = useState('')
+  const [maintCost, setMaintCost] = useState('')
+  const [maintError, setMaintError] = useState('')
+  const [maintSuccess, setMaintSuccess] = useState('')
+  const [maintFieldErrors, setMaintFieldErrors] = useState({})
+
+  const fetchMaintenance = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/v1/maintenance')
+      const data = await res.json()
+      if (data.success) {
+        setMaintenanceLogs(data.data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch maintenance logs', err)
+    }
+  }
+
+  const handleMaintSubmit = async (e) => {
+    e.preventDefault()
+    setMaintError('')
+    setMaintSuccess('')
+    setMaintFieldErrors({})
+
+    const errors = {}
+    if (!maintVehicleId) errors.vehicleId = 'Please select a vehicle'
+    if (!maintDescription || maintDescription.trim().length < 3) errors.description = 'Description must be at least 3 characters'
+    if (!maintCost || parseFloat(maintCost) <= 0) errors.cost = 'Cost must be a positive number'
+
+    if (Object.keys(errors).length > 0) {
+      setMaintFieldErrors(errors)
+      setMaintError('Validation failed. Please correct the fields.')
+      return
+    }
+
+    try {
+      const res = await fetch('http://localhost:5000/api/v1/maintenance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vehicleId: parseInt(maintVehicleId),
+          description: maintDescription.trim(),
+          cost: parseFloat(maintCost)
+        })
+      })
+      const data = await res.json()
+      if (res.status === 201) {
+        setMaintSuccess('Maintenance log successfully created. Vehicle status changed to In Shop.')
+        setMaintVehicleId('')
+        setMaintDescription('')
+        setMaintCost('')
+        setIsMaintFormOpen(false)
+        fetchMaintenance()
+        fetchVehicles()
+      } else if (res.status === 422 && data.data?.errors) {
+        const apiErrors = {}
+        data.data.errors.forEach(err => { apiErrors[err.field] = err.message })
+        setMaintFieldErrors(apiErrors)
+        setMaintError('Validation failed. Please check inputs.')
+      } else {
+        setMaintError(data.message || 'Failed to schedule maintenance')
+      }
+    } catch (err) {
+      setMaintError('Network error: Could not reach the server')
+    }
+  }
+
+  const handleCloseMaint = async (logId) => {
+    setMaintError('')
+    setMaintSuccess('')
+    try {
+      const res = await fetch(`http://localhost:5000/api/v1/maintenance/${logId}/close`, {
+        method: 'POST'
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setMaintSuccess('Maintenance log closed. Vehicle is now Available.')
+        fetchMaintenance()
+        fetchVehicles()
+      } else {
+        setMaintError(data.message || 'Failed to close maintenance log')
+      }
+    } catch (err) {
+      setMaintError('Network error: Could not reach the server')
+    }
+  }
+
   useEffect(() => {
     fetchVehicles()
     fetchDrivers()
     fetchTrips()
+    fetchMaintenance()
   }, [])
 
   // Dispatch form states
@@ -90,7 +182,6 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
 
   // Mock data cleared to empty lists
   const trackingVehicles = []
-  const maintenanceLogs = []
   const fuelLogs = []
   const safetyAlerts = []
   const complianceDocs = []
@@ -740,10 +831,87 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Service Logs & Reminders</h3>
-              <Button size="sm" className="h-8 text-sm font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 gap-1.5 select-none">
-                <Calendar className="h-3.5 w-3.5" /> Schedule Maintenance
+              <Button
+                onClick={() => { setMaintError(''); setMaintSuccess(''); setMaintFieldErrors({}); setIsMaintFormOpen(!isMaintFormOpen); }}
+                size="sm"
+                className="h-8 text-sm font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-zinc-950 dark:text-zinc-955 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 gap-1.5 select-none"
+              >
+                <Calendar className="h-3.5 w-3.5" /> {isMaintFormOpen ? 'Close Scheduler' : 'Schedule Maintenance'}
               </Button>
             </div>
+
+            {isMaintFormOpen && (
+              <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl p-5 space-y-4">
+                <CardHeader className="p-0 pb-2 flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Schedule Service</CardTitle>
+                    <CardDescription className="text-[10px] text-zinc-500">Book maintenance for active fleet vehicles. Will set vehicle status to In Shop.</CardDescription>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setIsMaintFormOpen(false)} className="h-6 w-6 rounded-full bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </CardHeader>
+                <form onSubmit={handleMaintSubmit} className="space-y-4">
+                  {maintError && (
+                    <div className="p-2.5 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 text-xs text-rose-500 rounded-lg">
+                      {maintError}
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase font-bold text-zinc-400">Select Vehicle</label>
+                      <select
+                        value={maintVehicleId}
+                        onChange={(e) => setMaintVehicleId(e.target.value)}
+                        className={`w-full p-2 bg-white dark:bg-zinc-900 border rounded-lg text-xs focus:outline-none ${maintFieldErrors.vehicleId ? 'border-red-500 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-800 focus:border-zinc-400'}`}
+                      >
+                        <option value="">Choose vehicle...</option>
+                        {vehicles.map(v => (
+                          <option key={v.id} value={v.id} disabled={v.status === 'In Shop'}>
+                            {v.reg} ({v.model}) [{v.status}]
+                          </option>
+                        ))}
+                      </select>
+                      {maintFieldErrors.vehicleId && <p className="text-[9px] text-red-500 font-semibold mt-0.5">{maintFieldErrors.vehicleId}</p>}
+                    </div>
+                    <div className="space-y-1 md:col-span-2">
+                      <label className="text-[10px] uppercase font-bold text-zinc-400">Service Description</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Brake Pads Replacement, Engine Audit"
+                        value={maintDescription}
+                        onChange={(e) => setMaintDescription(e.target.value)}
+                        className={`w-full p-2 bg-white dark:bg-zinc-900 border rounded-lg text-xs focus:outline-none ${maintFieldErrors.description ? 'border-red-500 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-800 focus:border-zinc-400'}`}
+                      />
+                      {maintFieldErrors.description && <p className="text-[9px] text-red-500 font-semibold mt-0.5">{maintFieldErrors.description}</p>}
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-end pt-2">
+                    <div className="w-1/3 space-y-1">
+                      <label className="text-[10px] uppercase font-bold text-zinc-400">Cost (₹)</label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 500"
+                        value={maintCost}
+                        onChange={(e) => setMaintCost(e.target.value)}
+                        className={`w-full p-2 bg-white dark:bg-zinc-900 border rounded-lg text-xs focus:outline-none ${maintFieldErrors.cost ? 'border-red-500 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-800 focus:border-zinc-400'}`}
+                      />
+                      {maintFieldErrors.cost && <p className="text-[9px] text-red-500 font-semibold mt-0.5">{maintFieldErrors.cost}</p>}
+                    </div>
+                    <Button type="submit" size="sm" className="h-8 bg-zinc-900 dark:bg-zinc-100 text-zinc-950 dark:text-zinc-955 hover:bg-zinc-800 dark:hover:bg-zinc-200 rounded-lg select-none">
+                      Schedule Service
+                    </Button>
+                  </div>
+                </form>
+              </Card>
+            )}
+
+            {maintSuccess && (
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/50 rounded-xl text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 shrink-0" />
+                <span>{maintSuccess}</span>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="md:col-span-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
@@ -761,23 +929,45 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                         <th className="py-2.5 px-3">Invoice</th>
                         <th className="py-2.5 px-3">Date</th>
                         <th className="py-2.5 px-3">Status</th>
+                        <th className="py-2.5 px-3 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {maintenanceLogs.map((log) => (
-                        <tr key={log.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 text-xs text-zinc-800 dark:text-zinc-200">
-                          <td className="py-3 px-3 text-xs font-semibold text-xs text-zinc-900 dark:text-zinc-50 text-xs">{log.id}</td>
-                          <td className="py-3 px-3 text-xs">{log.reg}</td>
-                          <td className="py-3 px-3 text-xs">{log.service}</td>
-                          <td className="py-3 px-3 text-xs">{log.cost}</td>
-                          <td className="py-3 px-3 text-xs text-[10px] text-zinc-500 dark:text-zinc-400">{log.date}</td>
-                          <td className="py-3 px-3 text-xs">
-                            <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
-                              {log.status}
-                            </span>
-                          </td>
+                      {maintenanceLogs.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="py-8 text-center text-xs text-zinc-400">No maintenance tasks scheduled.</td>
                         </tr>
-                      ))}
+                      ) : (
+                        maintenanceLogs.map((log) => {
+                          const veh = vehicles.find(v => v.id === log.vehicleId)
+                          return (
+                            <tr key={log.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 text-xs text-zinc-800 dark:text-zinc-200">
+                              <td className="py-3 px-3 text-xs font-semibold text-zinc-900 dark:text-zinc-50">#{log.id}</td>
+                              <td className="py-3 px-3 text-xs">{veh ? veh.reg : `ID: ${log.vehicleId}`}</td>
+                              <td className="py-3 px-3 text-xs">{log.description}</td>
+                              <td className="py-3 px-3 text-xs">₹{log.cost.toLocaleString()}</td>
+                              <td className="py-3 px-3 text-xs text-[10px] text-zinc-500 dark:text-zinc-400">{log.date.split('T')[0]}</td>
+                              <td className="py-3 px-3 text-xs">
+                                <span className={'px-2.5 py-0.5 text-[10px] font-semibold rounded-full border uppercase ' + (log.status === 'Active' ? 'bg-amber-50/90 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' : 'bg-emerald-50/90 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800')}>
+                                  {log.status}
+                                </span>
+                              </td>
+                              <td className="py-3 px-3 text-xs text-right">
+                                {log.status === 'Active' && (
+                                  <Button
+                                    onClick={() => handleCloseMaint(log.id)}
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-6 px-2 text-[10px] bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-850 text-zinc-950 dark:text-zinc-950 font-semibold border-zinc-200 dark:border-zinc-800 select-none"
+                                  >
+                                    Close Log
+                                  </Button>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        })
+                      )}
                     </tbody>
                   </table>
                 </CardContent>
