@@ -84,12 +84,12 @@ export default function FinancialAnalystView({ activeSubTab }) {
     return converted;
   }
 
-  const formatFinancial = (amountInINR) => {
+  const formatFinancial = (amountInINR, originalColorClass = "text-zinc-900 dark:text-zinc-100") => {
     const orig = convertAmount(amountInINR);
     const inflated = orig * (1 + inflationRate / 100);
     return (
       <div className="flex flex-col text-left">
-        <span className="text-zinc-900 dark:text-zinc-100 font-bold">
+        <span className={`${originalColorClass} font-bold`}>
           {cSym}{orig.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </span>
         <span className="text-[10px] text-zinc-400 font-medium block leading-none mt-0.5">
@@ -767,7 +767,7 @@ export default function FinancialAnalystView({ activeSubTab }) {
                         </div>
                         <div className="px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black border border-zinc-200 dark:border-zinc-800">
                           <span className="text-zinc-450 dark:text-zinc-500 block text-[9px] uppercase font-bold mb-0.5">Total Operational Cost</span>
-                          {formatFinancial(totalOpsCost)}
+                          {formatFinancial(totalOpsCost, "text-white dark:text-black")}
                         </div>
                       </div>
                     </div>
