@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import prisma from '../db'
 import { sendResponse } from '../utils/response'
+import { EmailService } from '../services/EmailService'
 
 const router = Router()
 
@@ -51,6 +52,8 @@ router.post('/trigger-reminders', async (req: Request, res: Response, next: Next
 
     for (const driver of drivers) {
       const expiry = new Date(driver.licenseExpiryDate)
+      const targetEmail = driver.email || `${driver.name.replace(/\s+/g, '').toLowerCase()}@transitops.com`
+
       if (expiry < now) {
         const existing = await prisma.transitAlert.findFirst({
           where: { driverId: driver.id, type: 'License Expired', isDismissed: false }
@@ -65,8 +68,16 @@ router.post('/trigger-reminders', async (req: Request, res: Response, next: Next
               severity: 'high'
             }
           })
+          const daysOverdue = Math.ceil((now.getTime() - expiry.getTime()) / (1000 * 60 * 60 * 24))
+          await EmailService.sendLicenseWarningEmail(
+            targetEmail,
+            driver.name,
+            driver.licenseNumber,
+            expiry,
+            -daysOverdue
+          )
           notificationsSent++
-          recipients.push(driver.contactNumber)
+          recipients.push(targetEmail)
         }
       } else if (expiry <= thirtyDaysFromNow) {
         const existing = await prisma.transitAlert.findFirst({
@@ -83,8 +94,15 @@ router.post('/trigger-reminders', async (req: Request, res: Response, next: Next
               severity: 'medium'
             }
           })
+          await EmailService.sendLicenseWarningEmail(
+            targetEmail,
+            driver.name,
+            driver.licenseNumber,
+            expiry,
+            daysLeft
+          )
           notificationsSent++
-          recipients.push(driver.contactNumber)
+          recipients.push(targetEmail)
         }
       }
     }
