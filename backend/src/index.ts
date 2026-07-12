@@ -4,6 +4,8 @@ dotenv.config();
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import path from 'path';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerDocument } from './config/swagger';
 import prisma from './db';
 import logger from './config/logger';
 import morganMiddleware from './middleware/morgan';
@@ -29,6 +31,7 @@ app.use(cors());
 app.use(express.json());
 app.use(morganMiddleware);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.get('/', (req: Request, res: Response) => {
   return sendResponse(res, 200, true, 'Welcome to the TransitOps API');
