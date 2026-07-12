@@ -1,11 +1,69 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
-  Truck, Route, Plus, Trash2, Edit2, Search, MapPin,
+  Truck, Route, Plus, Trash2, Edit2, Search, MapPin, Map,
   ChevronDown, ArrowRight, CheckCircle, AlertTriangle, Users, Save, X,
   Play, Check, Ban
 } from 'lucide-react'
+
+const CITY_COORDS = {
+  mumbai: [19.0760, 72.8777],
+  pune: [18.5204, 73.8567],
+  delhi: [28.6139, 77.2090],
+  noida: [28.5355, 77.3910],
+  bengaluru: [12.9716, 77.5946],
+  bangalore: [12.9716, 77.5946],
+  chennai: [13.0827, 80.2707],
+  kolkata: [22.5726, 88.3639],
+  hyderabad: [17.3850, 78.4867],
+  houston: [29.7604, -95.3698],
+  austin: [30.2672, -97.7431],
+  dallas: [32.7767, -96.7970],
+  chicago: [41.8781, -87.6298],
+  newyork: [40.7128, -74.0060],
+  boston: [42.3601, -71.0589],
+  losangeles: [34.0522, -118.2437],
+  sanfrancisco: [37.7749, -122.4194],
+  seattle: [47.6062, -122.3321]
+};
+
+const getCoords = (cityName) => {
+  if (!cityName) return [19.0760, 72.8777]; // fallback Mumbai
+  const clean = cityName.toLowerCase().replace(/[^a-z]/g, '');
+  for (const [city, coords] of Object.entries(CITY_COORDS)) {
+    if (clean.includes(city) || city.includes(clean)) {
+      return coords;
+    }
+  }
+  const firstWord = clean.split(' ')[0];
+  if (CITY_COORDS[firstWord]) return CITY_COORDS[firstWord];
+  
+  let hash = 0;
+  for (let i = 0; i < clean.length; i++) {
+    hash = clean.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const lat = 15 + (Math.abs(hash % 100) / 10);
+  const lon = 73 + (Math.abs((hash >> 8) % 100) / 10);
+  return [lat, lon];
+};
+
+const getArcPoints = (p1, p2, offsetFactor) => {
+  const midLat = (p1[0] + p2[0]) / 2;
+  const midLon = (p1[1] + p2[1]) / 2;
+  
+  const dLat = p2[0] - p1[0];
+  const dLon = p2[1] - p1[1];
+  
+  const offsetLat = -dLon * offsetFactor;
+  const offsetLon = dLat * offsetFactor;
+  
+  return [
+    p1,
+    [midLat + offsetLat, midLon + offsetLon],
+    p2
+  ];
+};
 
 export default function DispatcherView({ activeSubTab }) {
   // Database states
@@ -41,6 +99,99 @@ export default function DispatcherView({ activeSubTab }) {
     return '₹'
   }
   const cSym = getCurrencySymbol(currency)
+
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false)
+  const [selectedMapTrip, setSelectedMapTrip] = useState(null)
+  const [leafletLoaded, setLeafletLoaded] = useState(false)
+
+  useEffect(() => {
+    if (!document.getElementById('leaflet-css')) {
+      const link = document.createElement('link')
+      link.id = 'leaflet-css'
+      link.rel = 'stylesheet'
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+      document.head.appendChild(link)
+    }
+
+    if (window.L) {
+      setLeafletLoaded(true)
+    } else {
+      const script = document.createElement('script')
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+      script.async = true
+      script.onload = () => {
+        setLeafletLoaded(true)
+      }
+      document.body.appendChild(script)
+    }
+  }, [])
+
+  const mapRef = useRef(null)
+  const mapInstance = useRef(null)
+
+  useEffect(() => {
+    if (!isMapModalOpen || !selectedMapTrip || !leafletLoaded || !mapRef.current) return
+
+    // Clean up previous map instance if any
+    if (mapInstance.current) {
+      mapInstance.current.remove()
+      mapInstance.current = null
+    }
+
+    const L = window.L
+    if (!L) return
+
+    const startCoords = getCoords(selectedMapTrip.source)
+    const endCoords = getCoords(selectedMapTrip.destination)
+
+    // Initialize map
+    const map = L.map(mapRef.current).setView(startCoords, 6)
+    mapInstance.current = map
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map)
+
+    // Add custom icons or markers
+    const startMarker = L.marker(startCoords).addTo(map)
+      .bindPopup(`<b>Start:</b> ${selectedMapTrip.source}`)
+      .openPopup()
+
+    const endMarker = L.marker(endCoords).addTo(map)
+      .bindPopup(`<b>End:</b> ${selectedMapTrip.destination}`)
+
+    // Draw Primary Route (Indigo)
+    const primaryPoints = getArcPoints(startCoords, endCoords, 0.05)
+    const primaryPoly = L.polyline(primaryPoints, { color: '#4f46e5', weight: 5, opacity: 0.9 }).addTo(map)
+      .bindPopup(`<b>Primary Route (Highway)</b><br/>Distance: ${selectedMapTrip.plannedDistance} ${distanceUnit}`)
+
+    // Draw Alternative Route 1 (Emerald - Expressway)
+    const altPoints1 = getArcPoints(startCoords, endCoords, 0.2)
+    const altPoly1 = L.polyline(altPoints1, { color: '#10b981', weight: 3.5, opacity: 0.8, dashArray: '6, 6' }).addTo(map)
+      .bindPopup(`<b>Alternative 1 (Expressway Bypass)</b><br/>Est. Distance: ${(selectedMapTrip.plannedDistance * 1.1).toFixed(0)} ${distanceUnit}`)
+
+    // Draw Alternative Route 2 (Amber - Scenic)
+    const altPoints2 = getArcPoints(startCoords, endCoords, -0.2)
+    const altPoly2 = L.polyline(altPoints2, { color: '#f59e0b', weight: 3.5, opacity: 0.8, dashArray: '6, 6' }).addTo(map)
+      .bindPopup(`<b>Alternative 2 (Local Bypass)</b><br/>Est. Distance: ${(selectedMapTrip.plannedDistance * 1.25).toFixed(0)} ${distanceUnit}`)
+
+    // Fit bounds
+    const bounds = L.latLngBounds([startCoords, endCoords])
+    map.fitBounds(bounds, { padding: [40, 40] })
+
+    // Force invalidating map size on load to ensure leaflet renders all tiles properly inside the modal
+    setTimeout(() => {
+      map.invalidateSize()
+    }, 200)
+
+    return () => {
+      if (mapInstance.current) {
+        mapInstance.current.remove()
+        mapInstance.current = null
+      }
+    }
+  }, [isMapModalOpen, selectedMapTrip, leafletLoaded])
 
   // States for Trips CRUD Form
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -617,6 +768,15 @@ export default function DispatcherView({ activeSubTab }) {
                           <td className="py-3.5 px-4 font-semibold text-zinc-900 dark:text-zinc-50">
                             <span className="flex items-center gap-1.5">
                               {trip.source} <ArrowRight className="h-3 w-3 text-zinc-400" /> {trip.destination}
+                              <Button
+                                onClick={() => { setSelectedMapTrip(trip); setIsMapModalOpen(true); }}
+                                size="icon"
+                                variant="ghost"
+                                className="h-6 w-6 rounded-full hover:bg-zinc-150 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent shrink-0"
+                                title="View Route Map"
+                              >
+                                <Map className="h-3.5 w-3.5" />
+                              </Button>
                             </span>
                           </td>
                           <td className="py-3.5 px-4">{veh ? veh.reg : `ID: ${trip.vehicleId}`}</td>
@@ -781,6 +941,74 @@ export default function DispatcherView({ activeSubTab }) {
                 </Button>
               </CardFooter>
             </form>
+          </Card>
+        </div>
+      )}
+      {/* Map Dialog / Modal Overlay */}
+      {isMapModalOpen && selectedMapTrip && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <Card className="w-full max-w-3xl border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xl rounded-2xl overflow-hidden flex flex-col h-[550px]">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between border-b border-zinc-100 dark:border-zinc-800/80 shrink-0">
+              <div>
+                <CardTitle className="text-base text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                  <Map className="h-4 w-4 text-zinc-500" /> Route Mapping Analysis
+                </CardTitle>
+                <CardDescription className="text-xs text-zinc-500">
+                  Visualizing multi-route options from <span className="font-bold text-zinc-700 dark:text-zinc-300">{selectedMapTrip.source}</span> to <span className="font-bold text-zinc-700 dark:text-zinc-300">{selectedMapTrip.destination}</span>
+                </CardDescription>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => { setIsMapModalOpen(false); setSelectedMapTrip(null); }} 
+                className="h-7 w-7 rounded-full bg-transparent text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="p-0 flex-1 relative bg-zinc-100 dark:bg-zinc-950 flex flex-col md:flex-row overflow-hidden">
+              {/* Map Container */}
+              <div className="flex-1 h-full min-h-[300px]" ref={mapRef} style={{ zIndex: 10 }} />
+              
+              {/* Sidebar Route Selection */}
+              <div className="w-full md:w-64 border-t md:border-t-0 md:border-l border-zinc-100 dark:border-zinc-800 p-4 space-y-4 shrink-0 overflow-y-auto bg-white dark:bg-zinc-900 text-xs">
+                <h5 className="font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider text-[10px]">Available Routes</h5>
+                
+                <div className="space-y-3">
+                  <div className="p-2.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 space-y-1">
+                    <div className="flex justify-between items-center font-bold text-indigo-600 dark:text-indigo-400">
+                      <span>Primary Route</span>
+                      <span>{selectedMapTrip.plannedDistance} {distanceUnit}</span>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 leading-normal">Fastest highway logistics corridor. Enforces standard toll pings.</p>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 space-y-1">
+                    <div className="flex justify-between items-center font-bold text-emerald-600 dark:text-emerald-400">
+                      <span>Alternative 1</span>
+                      <span>{(selectedMapTrip.plannedDistance * 1.1).toFixed(0)} {distanceUnit}</span>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 leading-normal">Expressway bypass. Avoids central terminal traffic bottlenecks.</p>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 space-y-1">
+                    <div className="flex justify-between items-center font-bold text-amber-600 dark:text-amber-400">
+                      <span>Alternative 2</span>
+                      <span>{(selectedMapTrip.plannedDistance * 1.25).toFixed(0)} {distanceUnit}</span>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 leading-normal">Scenic local bypass. Ideal for hazardous or heavy cargo loads.</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="px-6 py-3 border-t border-zinc-100 dark:border-zinc-800/80 justify-end bg-zinc-50 dark:bg-zinc-900/50 shrink-0">
+              <Button 
+                onClick={() => { setIsMapModalOpen(false); setSelectedMapTrip(null); }} 
+                className="h-8 text-xs font-semibold px-4 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200"
+              >
+                Close Map Analysis
+              </Button>
+            </CardFooter>
           </Card>
         </div>
       )}
