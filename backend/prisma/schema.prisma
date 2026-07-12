@@ -1,35 +1,23 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["views"]
 }
 
-enum UserRole {
-  FleetManager     @map("Fleet Manager")
-  Driver           @map("Driver")
-  SafetyOfficer    @map("Safety Officer")
-  FinancialAnalyst @map("Financial Analyst")
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id       Int      @id @default(autoincrement())
-  email    String   @unique
-  password String
-  name     String
-  role     UserRole
+  id             Int      @id @default(autoincrement())
+  email          String   @unique
+  password       String
+  name           String
+  role           UserRole
+  failedAttempts Int      @default(0) @map("failed_attempts")
+  isLocked       Boolean  @default(false) @map("is_locked")
 
   @@map("transit_user")
-}
-
-enum VehicleStatus {
-  Available
-  OnTrip    @map("On Trip")
-  InShop    @map("In Shop")
-  Retired
 }
 
 model TransitVehicle {
@@ -41,40 +29,28 @@ model TransitVehicle {
   currentOdometer    Float                   @map("current_odometer")
   acquisitionCost    Float                   @map("acquisition_cost")
   status             VehicleStatus           @default(Available)
-  trips              TransitTrip[]
-  maintenanceLogs    TransitMaintenanceLog[]
-  fuelLogs           TransitFuelLog[]
   expenses           TransitExpense[]
+  fuelLogs           TransitFuelLog[]
+  maintenanceLogs    TransitMaintenanceLog[]
+  trips              TransitTrip[]
 
   @@map("transit_vehicle")
 }
 
-enum DriverStatus {
-  Available
-  OnTrip    @map("On Trip")
-  OffDuty   @map("Off Duty")
-  Suspended
-}
-
 model TransitDriver {
-  id                Int          @id @default(autoincrement())
+  id                Int             @id @default(autoincrement())
   name              String
-  licenseNumber     String       @unique @map("license_number")
-  licenseCategory   String       @map("license_category")
-  licenseExpiryDate DateTime     @map("license_expiry_date")
-  contactNumber     String       @map("contact_number")
-  safetyScore       Float        @map("safety_score")
-  status            DriverStatus @default(Available)
+  licenseNumber     String          @unique @map("license_number")
+  licenseCategory   String          @map("license_category")
+  licenseExpiryDate DateTime        @map("license_expiry_date")
+  contactNumber     String          @map("contact_number")
+  safetyScore       Float           @map("safety_score")
+  status            DriverStatus    @default(Available)
+  email             String?         @unique
+  transit_alert     transit_alert[]
   trips             TransitTrip[]
 
   @@map("transit_driver")
-}
-
-enum TripStatus {
-  Draft
-  Dispatched
-  Completed
-  Cancelled
 }
 
 model TransitTrip {
@@ -90,18 +66,12 @@ model TransitTrip {
   revenue                Float
   status                 TripStatus     @default(Draft)
   createdAt              DateTime       @default(now()) @map("created_at")
-
-  vehicle                TransitVehicle @relation(fields: [vehicleId], references: [id])
   driver                 TransitDriver  @relation(fields: [driverId], references: [id])
+  vehicle                TransitVehicle @relation(fields: [vehicleId], references: [id])
 
-  @@map("transit_trip")
   @@index([vehicleId])
   @@index([driverId])
-}
-
-enum MaintenanceStatus {
-  Active
-  Closed
+  @@map("transit_trip")
 }
 
 model TransitMaintenanceLog {
@@ -111,11 +81,10 @@ model TransitMaintenanceLog {
   cost        Float
   status      MaintenanceStatus @default(Active)
   date        DateTime          @default(now())
-
   vehicle     TransitVehicle    @relation(fields: [vehicleId], references: [id])
 
-  @@map("transit_maintenance_log")
   @@index([vehicleId])
+  @@map("transit_maintenance_log")
 }
 
 model TransitFuelLog {
@@ -125,11 +94,10 @@ model TransitFuelLog {
   cost            Float
   odometerReading Float          @map("odometer_reading")
   date            DateTime       @default(now())
-
   vehicle         TransitVehicle @relation(fields: [vehicleId], references: [id])
 
-  @@map("transit_fuel_log")
   @@index([vehicleId])
+  @@map("transit_fuel_log")
 }
 
 model TransitExpense {
@@ -139,11 +107,38 @@ model TransitExpense {
   amount      Float
   date        DateTime       @default(now())
   description String?
-
   vehicle     TransitVehicle @relation(fields: [vehicleId], references: [id])
 
-  @@map("transit_expense")
   @@index([vehicleId])
+  @@map("transit_expense")
+}
+
+model TransitDocument {
+  id           Int      @id @default(autoincrement())
+  entityType   String   @map("entity_type")
+  entityId     Int      @map("entity_id")
+  documentType String   @map("document_type")
+  fileName     String   @map("file_name")
+  filePath     String   @map("file_path")
+  uploadedAt   DateTime @default(now()) @map("uploaded_at")
+
+  @@index([entityType, entityId])
+  @@map("transit_document")
+}
+
+model transit_alert {
+  id             Int            @id @default(autoincrement())
+  driver_id      Int?
+  driver_name    String?
+  type           String
+  description    String
+  severity       AlertSeverity  @default(medium)
+  is_dismissed   Boolean        @default(false)
+  created_at     DateTime       @default(now())
+  transit_driver TransitDriver? @relation(fields: [driver_id], references: [id])
+
+  @@index([driver_id])
+  @@index([is_dismissed])
 }
 
 view VehicleAnalytics {
@@ -165,15 +160,41 @@ view VehicleAnalytics {
   @@map("vehicle_analytics")
 }
 
-model TransitDocument {
-  id           Int      @id @default(autoincrement())
-  entityType   String   @map("entity_type")
-  entityId     Int      @map("entity_id")
-  documentType String   @map("document_type")
-  fileName     String   @map("file_name")
-  filePath     String   @map("file_path")
-  uploadedAt   DateTime @default(now()) @map("uploaded_at")
+enum UserRole {
+  FleetManager     @map("Fleet Manager")
+  Driver           @map("Driver")
+  SafetyOfficer    @map("Safety Officer")
+  FinancialAnalyst @map("Financial Analyst")
+}
 
-  @@map("transit_document")
-  @@index([entityType, entityId])
+enum VehicleStatus {
+  Available
+  OnTrip    @map("On Trip")
+  InShop    @map("In Shop")
+  Retired
+}
+
+enum DriverStatus {
+  Available
+  OnTrip    @map("On Trip")
+  OffDuty   @map("Off Duty")
+  Suspended
+}
+
+enum TripStatus {
+  Draft
+  Dispatched
+  Completed
+  Cancelled
+}
+
+enum MaintenanceStatus {
+  Active
+  Closed
+}
+
+enum AlertSeverity {
+  low
+  medium
+  high
 }
