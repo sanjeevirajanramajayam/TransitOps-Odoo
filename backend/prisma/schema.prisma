@@ -150,6 +150,7 @@ enum UserRole {
   Driver           @map("Driver")
   SafetyOfficer    @map("Safety Officer")
   FinancialAnalyst @map("Financial Analyst")
+  Dispatcher       @map("Dispatcher")
 }
 
 enum VehicleStatus {
