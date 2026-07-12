@@ -1,22 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import logger from '../config/logger';
-
-export interface ApiResponse<T = any> {
-  success: boolean;
-  message: string;
-  data?: T;
-  timestamp: string;
-}
-
-export function sendResponse<T>(res: Response, statusCode: number, success: boolean, message: string, data?: T) {
-  const responseBody: ApiResponse<T> = {
-    success,
-    message,
-    data,
-    timestamp: new Date().toISOString(),
-  };
-  return res.status(statusCode).json(responseBody);
-}
+import { sendResponse } from '../utils/response';
 
 export const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
   let statusCode = err.status || 500;
