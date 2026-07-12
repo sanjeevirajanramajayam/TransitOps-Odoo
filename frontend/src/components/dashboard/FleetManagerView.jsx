@@ -165,11 +165,42 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
     }
   }
 
+  // Analytics & KPI States
+  const [kpis, setKpis] = useState({
+    activeVehicles: 0,
+    availableVehicles: 0,
+    vehiclesInMaintenance: 0,
+    activeTrips: 0,
+    pendingTrips: 0,
+    driversOnDuty: 0,
+    fleetUtilization: 0
+  })
+  const [reports, setReports] = useState([])
+
+  const fetchAnalytics = async () => {
+    try {
+      const kpiRes = await fetch('http://localhost:5000/api/v1/analytics/kpis')
+      const kpiData = await kpiRes.json()
+      if (kpiData.success) {
+        setKpis(kpiData.data)
+      }
+
+      const repRes = await fetch('http://localhost:5000/api/v1/analytics/reports')
+      const repData = await repRes.json()
+      if (repData.success) {
+        setReports(repData.data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch analytics data', err)
+    }
+  }
+
   useEffect(() => {
     fetchVehicles()
     fetchDrivers()
     fetchTrips()
     fetchMaintenance()
+    fetchAnalytics()
   }, [])
 
   // Dispatch form states
@@ -193,8 +224,14 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
   const safetyAlerts = []
   const complianceDocs = []
 
-  const roiData = []
-  const fuelData = []
+  const roiData = reports.map(r => ({
+    name: r.registrationNumber,
+    roi: Math.round(r.roi * 100 * 10) / 10
+  }))
+  const fuelData = reports.map(r => ({
+    name: r.registrationNumber,
+    efficiency: r.fuelEfficiency
+  }))
 
 
   const filteredVehicles = vehicles.filter(v => {
@@ -545,55 +582,53 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 p-4 shadow-sm rounded-xl">
-                <div className="flex justify-between items-center text-zinc-400 dark:text-zinc-2000">
-                  <span className="text-xs uppercase font-bold tracking-wider">Fleet Health Index</span>
+                <div className="flex justify-between items-center text-zinc-400 dark:text-zinc-200">
+                  <span className="text-xs uppercase font-bold tracking-wider">Fleet Utilization</span>
                   <Activity className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
                 </div>
                 <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-zinc-900 dark:text-zinc-50">94.8%</span>
+                  <span className="text-3xl font-black text-zinc-900 dark:text-zinc-50">{kpis.fleetUtilization}%</span>
                   <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-semibold flex items-center">
-                    <TrendingUp className="h-3.5 w-3.5 mr-0.5" /> +1.2%
+                    <TrendingUp className="h-3.5 w-3.5 mr-0.5" /> active
                   </span>
                 </div>
-                <p className="text-[10px] text-zinc-400 mt-1">Active uptime and completed dispatches</p>
+                <p className="text-[10px] text-zinc-400 mt-1">{kpis.activeVehicles} of {kpis.activeVehicles + kpis.availableVehicles + kpis.vehiclesInMaintenance} operational fleet</p>
               </Card>
 
               <Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 p-4 shadow-sm rounded-xl">
-                <div className="flex justify-between items-center text-zinc-400 dark:text-zinc-2000">
-                  <span className="text-xs uppercase font-bold tracking-wider">Avg Odometer</span>
-                  <Truck className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
+                <div className="flex justify-between items-center text-zinc-400 dark:text-zinc-200">
+                  <span className="text-xs uppercase font-bold tracking-wider">Drivers On Duty</span>
+                  <Users className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
                 </div>
                 <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-zinc-900 dark:text-zinc-50">119.8k</span>
-                  <span className="text-xs text-zinc-400 dark:text-zinc-500">miles</span>
+                  <span className="text-3xl font-black text-zinc-900 dark:text-zinc-50">{kpis.driversOnDuty}</span>
+                  <span className="text-xs text-zinc-400 dark:text-zinc-505">drivers</span>
                 </div>
-                <p className="text-[10px] text-zinc-400 mt-1">Average mileage across all active assets</p>
+                <p className="text-[10px] text-zinc-400 mt-1">Available or currently active on trips</p>
               </Card>
 
               <Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 p-4 shadow-sm rounded-xl">
-                <div className="flex justify-between items-center text-zinc-400 dark:text-zinc-2000">
-                  <span className="text-xs uppercase font-bold tracking-wider">Active Alerts</span>
-                  <ShieldAlert className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
+                <div className="flex justify-between items-center text-zinc-400 dark:text-zinc-200">
+                  <span className="text-xs uppercase font-bold tracking-wider">Active / Pending</span>
+                  <Route className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
                 </div>
                 <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-zinc-900 dark:text-zinc-50">03</span>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold">issues found</span>
+                  <span className="text-3xl font-black text-zinc-900 dark:text-zinc-50">{kpis.activeTrips} / {kpis.pendingTrips}</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold">trips</span>
                 </div>
-                <p className="text-[10px] text-zinc-400 mt-1">Requires immediate dispatch review</p>
+                <p className="text-[10px] text-zinc-400 mt-1">Dispatched routes vs Draft bookings</p>
               </Card>
 
               <Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 p-4 shadow-sm rounded-xl">
-                <div className="flex justify-between items-center text-zinc-400 dark:text-zinc-2000">
-                  <span className="text-xs uppercase font-bold tracking-wider">Acquisition ROI</span>
-                  <IndianRupee className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
+                <div className="flex justify-between items-center text-zinc-400 dark:text-zinc-200">
+                  <span className="text-xs uppercase font-bold tracking-wider">In Shop</span>
+                  <Wrench className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
                 </div>
                 <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-zinc-900 dark:text-zinc-200">126%</span>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold flex items-center">
-                    <TrendingUp className="h-3.5 w-3.5 mr-0.5" /> +4%
-                  </span>
+                  <span className="text-3xl font-black text-zinc-900 dark:text-zinc-50">{kpis.vehiclesInMaintenance}</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold">vehicles</span>
                 </div>
-                <p className="text-[10px] text-zinc-400 mt-1">Overall fleet returns vs target</p>
+                <p className="text-[10px] text-zinc-400 mt-1">Undergoing active service checks</p>
               </Card>
             </div>
 
