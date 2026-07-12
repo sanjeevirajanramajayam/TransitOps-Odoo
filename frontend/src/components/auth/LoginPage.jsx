@@ -42,7 +42,12 @@ export default function LoginPage({ onLogin }) {
     try {
       const data = await callLogin(email.trim(), password)
       if (!data.success) {
-        setError(data.message || 'Login failed')
+        if (data.data?.errors) {
+          const detail = data.data.errors.map(err => `${err.field}: ${err.message}`).join(', ')
+          setError(`${data.message}: ${detail}`)
+        } else {
+          setError(data.message || 'Login failed')
+        }
         return
       }
       onLogin(data.data.user, data.data.token)
@@ -60,7 +65,12 @@ export default function LoginPage({ onLogin }) {
     try {
       const data = await callLogin(creds.email, creds.password)
       if (!data.success) {
-        setError(`Demo login failed: ${data.message}`)
+        if (data.data?.errors) {
+          const detail = data.data.errors.map(err => `${err.field}: ${err.message}`).join(', ')
+          setError(`Demo login failed: ${data.message} (${detail})`)
+        } else {
+          setError(`Demo login failed: ${data.message}`)
+        }
         return
       }
       onLogin(data.data.user, data.data.token)
