@@ -164,3 +164,16 @@ view VehicleAnalytics {
 
   @@map("vehicle_analytics")
 }
+
+model TransitDocument {
+  id           Int      @id @default(autoincrement())
+  entityType   String   @map("entity_type")
+  entityId     Int      @map("entity_id")
+  documentType String   @map("document_type")
+  fileName     String   @map("file_name")
+  filePath     String   @map("file_path")
+  uploadedAt   DateTime @default(now()) @map("uploaded_at")
+
+  @@map("transit_document")
+  @@index([entityType, entityId])
+}

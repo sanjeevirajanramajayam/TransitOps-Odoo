@@ -6,4 +6,6 @@ build/
 coverage/
 *.log
 logs/
+uploads/
+backend/uploads/
 REQUIREMENTS.md
