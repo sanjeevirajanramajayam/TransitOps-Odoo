@@ -4,7 +4,8 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["views"]
 }
 
 enum UserRole {
@@ -94,6 +95,8 @@ model TransitTrip {
   driver                 TransitDriver  @relation(fields: [driverId], references: [id])
 
   @@map("transit_trip")
+  @@index([vehicleId])
+  @@index([driverId])
 }
 
 enum MaintenanceStatus {
@@ -112,6 +115,7 @@ model TransitMaintenanceLog {
   vehicle     TransitVehicle    @relation(fields: [vehicleId], references: [id])
 
   @@map("transit_maintenance_log")
+  @@index([vehicleId])
 }
 
 model TransitFuelLog {
@@ -125,6 +129,7 @@ model TransitFuelLog {
   vehicle         TransitVehicle @relation(fields: [vehicleId], references: [id])
 
   @@map("transit_fuel_log")
+  @@index([vehicleId])
 }
 
 model TransitExpense {
@@ -138,4 +143,24 @@ model TransitExpense {
   vehicle     TransitVehicle @relation(fields: [vehicleId], references: [id])
 
   @@map("transit_expense")
+  @@index([vehicleId])
+}
+
+view VehicleAnalytics {
+  id                   Int    @unique
+  registrationNumber   String @map("registration_number")
+  modelName            String @map("model_name")
+  acquisitionCost      Float  @map("acquisition_cost")
+  totalRevenue         Float  @map("total_revenue")
+  totalFuelCost        Float  @map("total_fuel_cost")
+  totalMaintenanceCost Float  @map("total_maintenance_cost")
+  totalOtherExpenses   Float  @map("total_other_expenses")
+  totalOperationalCost Float  @map("total_operational_cost")
+  netProfit            Float  @map("net_profit")
+  totalDistance        Float  @map("total_distance")
+  totalFuelLiters      Float  @map("total_fuel_liters")
+  fuelEfficiency       Float  @map("fuel_efficiency")
+  roi                  Float  @map("roi")
+
+  @@map("vehicle_analytics")
 }
