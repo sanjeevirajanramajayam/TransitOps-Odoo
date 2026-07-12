@@ -4,13 +4,14 @@ import prisma from '../db';
 
 describe('Analytics API', () => {
   beforeAll(async () => {
-    // Standard cleanup of the tables to guarantee clean test metrics
-    await prisma.transitTrip.deleteMany({});
-    await prisma.transitMaintenanceLog.deleteMany({});
-    await prisma.transitFuelLog.deleteMany({});
-    await prisma.transitExpense.deleteMany({});
-    await prisma.transitVehicle.deleteMany({});
-    await prisma.transitDriver.deleteMany({});
+    await prisma.$transaction([
+      prisma.transitTrip.deleteMany({}),
+      prisma.transitMaintenanceLog.deleteMany({}),
+      prisma.transitFuelLog.deleteMany({}),
+      prisma.transitExpense.deleteMany({}),
+      prisma.transitVehicle.deleteMany({}),
+      prisma.transitDriver.deleteMany({})
+    ]);
 
     // Seed Vehicles
     // 1 OnTrip, 2 Available, 1 InShop, 1 Retired (Total operational = 4)
@@ -169,13 +170,14 @@ describe('Analytics API', () => {
   }, 30000); // 30 seconds timeout for remote database transactions
 
   afterAll(async () => {
-    // Tear down database records
-    await prisma.transitTrip.deleteMany({});
-    await prisma.transitMaintenanceLog.deleteMany({});
-    await prisma.transitFuelLog.deleteMany({});
-    await prisma.transitExpense.deleteMany({});
-    await prisma.transitVehicle.deleteMany({});
-    await prisma.transitDriver.deleteMany({});
+    await prisma.$transaction([
+      prisma.transitTrip.deleteMany({}),
+      prisma.transitMaintenanceLog.deleteMany({}),
+      prisma.transitFuelLog.deleteMany({}),
+      prisma.transitExpense.deleteMany({}),
+      prisma.transitVehicle.deleteMany({}),
+      prisma.transitDriver.deleteMany({})
+    ]);
     await prisma.$disconnect();
   }, 30000); // 30 seconds timeout
 
