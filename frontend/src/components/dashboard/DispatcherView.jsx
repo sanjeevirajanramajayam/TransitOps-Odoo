@@ -31,6 +31,7 @@ export default function DispatcherView({ activeSubTab }) {
   const [assignedDriverId, setAssignedDriverId] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
 
   // States for Completion Modal
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false)
@@ -94,9 +95,20 @@ export default function DispatcherView({ activeSubTab }) {
     e.preventDefault()
     setError('')
     setSuccess('')
+    setFieldErrors({})
 
-    if (!source || !destination || !cargoWeight || !plannedDistance || !revenue || !assignedVehicleId || !assignedDriverId) {
-      setError('Please fill in all fields')
+    const errors = {}
+    if (!source.trim() || source.trim().length < 2) errors.source = 'Origin must be at least 2 characters'
+    if (!destination.trim() || destination.trim().length < 2) errors.destination = 'Destination must be at least 2 characters'
+    if (!cargoWeight || parseFloat(cargoWeight) <= 0) errors.cargoWeight = 'Cargo weight must be a positive number'
+    if (!plannedDistance || parseFloat(plannedDistance) <= 0) errors.plannedDistance = 'Planned distance must be a positive number'
+    if (!revenue || parseFloat(revenue) <= 0) errors.revenue = 'Estimated revenue must be a positive number'
+    if (!assignedVehicleId) errors.vehicleId = 'Please select a vehicle'
+    if (!assignedDriverId) errors.driverId = 'Please select a driver'
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      setError('Validation failed. Please correct the fields.')
       return
     }
 
@@ -119,10 +131,15 @@ export default function DispatcherView({ activeSubTab }) {
           body: JSON.stringify(payload)
         })
         const data = await res.json()
-        if (res.ok) {
+        if (res.status === 200) {
           setSuccess('Trip details successfully updated!')
           resetForm()
           fetchData()
+        } else if (res.status === 422 && data.data?.errors) {
+          const apiErrors = {}
+          data.data.errors.forEach(err => { apiErrors[err.field] = err.message })
+          setFieldErrors(apiErrors)
+          setError('Validation failed. Please check the inputs.')
         } else {
           setError(data.message || 'Failed to submit trip')
         }
@@ -134,7 +151,7 @@ export default function DispatcherView({ activeSubTab }) {
           body: JSON.stringify(payload)
         })
         const data = await res.json()
-        if (res.ok) {
+        if (res.status === 201) {
           const tripId = data.data.id
           // Immediately auto-dispatch the trip
           const dispatchRes = await fetch(`http://localhost:5000/api/v1/trips/${tripId}/dispatch`, {
@@ -152,6 +169,11 @@ export default function DispatcherView({ activeSubTab }) {
             })
             setError(dispatchData.message || 'Failed to dispatch trip')
           }
+        } else if (res.status === 422 && data.data?.errors) {
+          const apiErrors = {}
+          data.data.errors.forEach(err => { apiErrors[err.field] = err.message })
+          setFieldErrors(apiErrors)
+          setError('Validation failed. Please check the inputs.')
         } else {
           setError(data.message || 'Failed to submit trip')
         }
@@ -281,6 +303,7 @@ export default function DispatcherView({ activeSubTab }) {
     setAssignedVehicleId('')
     setAssignedDriverId('')
     setEditingTripId(null)
+    setFieldErrors({})
     setIsFormOpen(false)
   }
 
@@ -423,8 +446,9 @@ export default function DispatcherView({ activeSubTab }) {
                         placeholder="e.g. Dallas, TX"
                         value={source}
                         onChange={(e) => setSource(e.target.value)}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        className={`w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none transition-colors ${fieldErrors.source ? 'border-red-500 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-800 focus:border-zinc-400'}`}
                       />
+                      {fieldErrors.source && <p className="text-[10px] text-red-500 font-semibold mt-0.5">{fieldErrors.source}</p>}
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs uppercase font-bold text-zinc-400">Trip Destination</label>
@@ -434,8 +458,9 @@ export default function DispatcherView({ activeSubTab }) {
                         placeholder="e.g. Houston, TX"
                         value={destination}
                         onChange={(e) => setDestination(e.target.value)}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        className={`w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none transition-colors ${fieldErrors.destination ? 'border-red-500 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-800 focus:border-zinc-400'}`}
                       />
+                      {fieldErrors.destination && <p className="text-[10px] text-red-500 font-semibold mt-0.5">{fieldErrors.destination}</p>}
                     </div>
                   </div>
 
@@ -448,8 +473,9 @@ export default function DispatcherView({ activeSubTab }) {
                         placeholder="e.g. 2500"
                         value={cargoWeight}
                         onChange={(e) => setCargoWeight(e.target.value)}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        className={`w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none transition-colors ${fieldErrors.cargoWeight ? 'border-red-500 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-800 focus:border-zinc-400'}`}
                       />
+                      {fieldErrors.cargoWeight && <p className="text-[10px] text-red-500 font-semibold mt-0.5">{fieldErrors.cargoWeight}</p>}
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs uppercase font-bold text-zinc-400">Planned Distance (mi)</label>
@@ -459,8 +485,9 @@ export default function DispatcherView({ activeSubTab }) {
                         placeholder="e.g. 240"
                         value={plannedDistance}
                         onChange={(e) => setPlannedDistance(e.target.value)}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        className={`w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none transition-colors ${fieldErrors.plannedDistance ? 'border-red-500 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-800 focus:border-zinc-400'}`}
                       />
+                      {fieldErrors.plannedDistance && <p className="text-[10px] text-red-500 font-semibold mt-0.5">{fieldErrors.plannedDistance}</p>}
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs uppercase font-bold text-zinc-400">Estimated Revenue ($)</label>
@@ -470,8 +497,9 @@ export default function DispatcherView({ activeSubTab }) {
                         placeholder="e.g. 1200"
                         value={revenue}
                         onChange={(e) => setRevenue(e.target.value)}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        className={`w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none transition-colors ${fieldErrors.revenue ? 'border-red-500 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-800 focus:border-zinc-400'}`}
                       />
+                      {fieldErrors.revenue && <p className="text-[10px] text-red-500 font-semibold mt-0.5">{fieldErrors.revenue}</p>}
                     </div>
                   </div>
 
@@ -482,7 +510,7 @@ export default function DispatcherView({ activeSubTab }) {
                         <select
                           value={assignedVehicleId}
                           onChange={(e) => setAssignedVehicleId(e.target.value)}
-                          className="w-full appearance-none pl-3 pr-8 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                          className={`w-full appearance-none pl-3 pr-8 py-2 bg-white dark:bg-zinc-900 border rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none transition-colors ${fieldErrors.vehicleId ? 'border-red-500 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-800 focus:border-zinc-400'}`}
                         >
                           <option value="">Select vehicle...</option>
                           {vehicles.map((v) => (
@@ -498,6 +526,7 @@ export default function DispatcherView({ activeSubTab }) {
                         </select>
                         <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
                       </div>
+                      {fieldErrors.vehicleId && <p className="text-[10px] text-red-500 font-semibold mt-0.5">{fieldErrors.vehicleId}</p>}
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs uppercase font-bold text-zinc-400">Assign Driver</label>
@@ -505,7 +534,7 @@ export default function DispatcherView({ activeSubTab }) {
                         <select
                           value={assignedDriverId}
                           onChange={(e) => setAssignedDriverId(e.target.value)}
-                          className="w-full appearance-none pl-3 pr-8 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                          className={`w-full appearance-none pl-3 pr-8 py-2 bg-white dark:bg-zinc-900 border rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none transition-colors ${fieldErrors.driverId ? 'border-red-500 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-800 focus:border-zinc-400'}`}
                         >
                           <option value="">Select driver...</option>
                           {drivers.map((d) => (
@@ -521,6 +550,7 @@ export default function DispatcherView({ activeSubTab }) {
                         </select>
                         <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
                       </div>
+                      {fieldErrors.driverId && <p className="text-[10px] text-red-500 font-semibold mt-0.5">{fieldErrors.driverId}</p>}
                     </div>
                   </div>
                 </CardContent>
