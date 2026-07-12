@@ -5,12 +5,15 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, L
 import {
   Truck, Wrench, ShieldAlert, Plus, Calendar, Settings,
   MapPin, Fuel, FileCheck, Activity,
-  TrendingUp, Users, IndianRupee, AlertOctagon, Search, Map, ChevronDown, ArrowLeft, Route, AlertTriangle, CheckCircle, Clock
+  TrendingUp, Users, IndianRupee, AlertOctagon, Search, Map, ChevronDown, ArrowLeft, Route, AlertTriangle, CheckCircle, Clock,
+  Edit2, Trash2
 } from 'lucide-react'
 
 export default function FleetManagerView({ activeSubTab, setActiveTab }) {
   const [vehicles, setVehicles] = useState([])
   const [driversList, setDriversList] = useState([])
+  const [editingVehicleId, setEditingVehicleId] = useState(null)
+  const [editingDriverId, setEditingDriverId] = useState(null)
 
   // New vehicle & driver form states
   const [newVehicle, setNewVehicle] = useState({ reg: '', model: '', type: 'Van', cap: '', odo: '', cost: '', status: 'Available' })
@@ -35,6 +38,9 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
           type: v.vehicleType,
           cap: `${v.maxLoadCapacity.toLocaleString()} lbs`,
           odo: `${v.currentOdometer.toLocaleString()} mi`,
+          rawCap: v.maxLoadCapacity,
+          rawOdo: v.currentOdometer,
+          cost: v.acquisitionCost,
           status: v.status === 'OnTrip' ? 'On Trip' : v.status === 'InShop' ? 'In Shop' : v.status
         }))
         setVehicles(mapped)
@@ -124,7 +130,9 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
     const matchesSearch = v.reg.toLowerCase().includes(vehicleSearch.toLowerCase()) ||
                           v.model.toLowerCase().includes(vehicleSearch.toLowerCase())
     const matchesType = vehicleTypeFilter === 'All' || v.type === vehicleTypeFilter
-    const matchesStatus = vehicleStatusFilter === 'All' || v.status === vehicleStatusFilter
+    const matchesStatus = vehicleStatusFilter === 'All'
+      ? v.status !== 'Retired'
+      : v.status === vehicleStatusFilter
     return matchesSearch && matchesType && matchesStatus
   })
 
@@ -138,8 +146,8 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
     const regClean = newVehicle.reg.trim().toUpperCase()
     if (!regClean) {
       errors.reg = 'Registration number is required'
-    } else if (!/^[A-Z0-9\-\s]{4,15}$/.test(regClean)) {
-      errors.reg = 'Must be 4-15 characters, alphanumeric, spaces or hyphens only'
+    } else if (!/^[A-Z0-9\-\s]{4,30}$/.test(regClean)) {
+      errors.reg = 'Must be 4-30 characters, alphanumeric, spaces or hyphens only'
     }
 
     const modelClean = newVehicle.model.trim()
@@ -173,8 +181,14 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
     }
 
     try {
-      const res = await fetch('http://localhost:5000/api/v1/vehicles', {
-        method: 'POST',
+      const isEditing = !!editingVehicleId
+      const url = isEditing 
+        ? `http://localhost:5000/api/v1/vehicles/${editingVehicleId}` 
+        : 'http://localhost:5000/api/v1/vehicles'
+      const method = isEditing ? 'PUT' : 'POST'
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           registrationNumber: regClean,
@@ -182,13 +196,15 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
           vehicleType: newVehicle.type,
           maxLoadCapacity: capNum,
           currentOdometer: odoNum,
-          acquisitionCost: costNum
+          acquisitionCost: costNum,
+          ...(isEditing ? { status: newVehicle.status } : {})
         })
       })
 
       const data = await res.json()
-      if (res.status === 201) {
+      if (res.status === 201 || (isEditing && res.status === 200)) {
         setNewVehicle({ reg: '', model: '', type: 'Van', cap: '', odo: '', cost: '', status: 'Available' })
+        setEditingVehicleId(null)
         fetchVehicles()
         setActiveTab('Vehicles')
       } else if (res.status === 422 && data.data?.errors) {
@@ -199,11 +215,51 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
         setFieldErrors(apiErrors)
         setVehicleFormError('Validation failed. Please check the inputs.')
       } else {
-        setVehicleFormError(data.message || 'Failed to register vehicle')
+        setVehicleFormError(data.message || (isEditing ? 'Failed to update vehicle' : 'Failed to register vehicle'))
       }
     } catch (err) {
       setVehicleFormError('Network error: Failed to reach the server')
     }
+  }
+
+  const handleVehicleEditClick = (v) => {
+    setEditingVehicleId(v.id)
+    setNewVehicle({
+      reg: v.reg,
+      model: v.model,
+      type: v.type,
+      cap: v.rawCap ? v.rawCap.toString() : '',
+      odo: v.rawOdo ? v.rawOdo.toString() : '',
+      cost: v.cost ? v.cost.toString() : '',
+      status: v.status === 'On Trip' ? 'OnTrip' : v.status === 'In Shop' ? 'InShop' : v.status
+    })
+    setActiveTab('Add Vehicle')
+  }
+
+  const handleVehicleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this vehicle?')) return
+    try {
+      const res = await fetch(`http://localhost:5000/api/v1/vehicles/${id}`, {
+        method: 'DELETE'
+      })
+      const data = await res.json()
+      if (data.success) {
+        fetchVehicles()
+      } else {
+        alert(data.message || 'Failed to delete vehicle')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Failed to delete vehicle')
+    }
+  }
+
+  const handleCancelVehicle = () => {
+    setEditingVehicleId(null)
+    setNewVehicle({ reg: '', model: '', type: 'Van', cap: '', odo: '', cost: '', status: 'Available' })
+    setVehicleFormError('')
+    setFieldErrors({})
+    setActiveTab('Vehicles')
   }
 
   const fetchDrivers = async () => {
@@ -215,6 +271,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
           id: d.id,
           name: d.name,
           license: d.licenseNumber,
+          category: d.licenseCategory,
           expiry: d.licenseExpiryDate?.split('T')[0] ?? '',
           contact: d.contactNumber,
           safetyScore: d.safetyScore ?? 100,
@@ -261,24 +318,32 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
     }
 
     try {
+      const isEditing = !!editingDriverId
+      const url = isEditing 
+        ? `http://localhost:5000/api/v1/drivers/${editingDriverId}` 
+        : 'http://localhost:5000/api/v1/drivers'
+      const method = isEditing ? 'PUT' : 'POST'
+
       const payload = {
         name: nameClean,
         licenseNumber: licenseClean,
         licenseCategory: newDriver.category,
         licenseExpiryDate: new Date(newDriver.expiry).toISOString(),
-        contactNumber: contactClean
+        contactNumber: contactClean,
+        ...(isEditing ? { status: newDriver.status } : {})
       }
       if (newDriver.email?.trim()) payload.email = newDriver.email.trim()
 
-      const res = await fetch('http://localhost:5000/api/v1/drivers', {
-        method: 'POST',
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
 
       const data = await res.json()
-      if (res.status === 201) {
-        setNewDriver({ name: '', license: '', category: 'Class A', expiry: '', contact: '', email: '' })
+      if (res.status === 201 || (isEditing && res.status === 200)) {
+        setNewDriver({ name: '', license: '', category: 'Class A', expiry: '', contact: '', email: '', status: 'Available' })
+        setEditingDriverId(null)
         fetchDrivers()
         setActiveTab('Drivers')
       } else if (res.status === 422 && data.data?.errors) {
@@ -287,11 +352,51 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
         setDriverFieldErrors(apiErrors)
         setDriverFormError('Validation failed. Please check the inputs.')
       } else {
-        setDriverFormError(data.message || 'Failed to register driver')
+        setDriverFormError(data.message || (isEditing ? 'Failed to update driver' : 'Failed to register driver'))
       }
     } catch (err) {
       setDriverFormError('Network error: Failed to reach the server')
     }
+  }
+
+  const handleDriverEditClick = (driver) => {
+    setEditingDriverId(driver.id)
+    setNewDriver({
+      name: driver.name,
+      license: driver.license,
+      category: driver.category ?? 'Class A',
+      expiry: driver.expiry,
+      contact: driver.contact,
+      email: driver.email,
+      status: driver.status === 'On Trip' ? 'OnTrip' : driver.status === 'Off Duty' ? 'OffDuty' : driver.status
+    })
+    setActiveTab('Add Driver')
+  }
+
+  const handleDriverDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this driver?')) return
+    try {
+      const res = await fetch(`http://localhost:5000/api/v1/drivers/${id}`, {
+        method: 'DELETE'
+      })
+      const data = await res.json()
+      if (data.success) {
+        fetchDrivers()
+      } else {
+        alert(data.message || 'Failed to delete driver')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Failed to delete driver')
+    }
+  }
+
+  const handleCancelDriver = () => {
+    setEditingDriverId(null)
+    setNewDriver({ name: '', license: '', category: 'Class A', expiry: '', contact: '', email: '', status: 'Available' })
+    setDriverFormError('')
+    setDriverFieldErrors({})
+    setActiveTab('Drivers')
   }
 
   const handleDispatch = (e) => {
@@ -560,17 +665,25 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                         </div>
                       </div>
                     </div>
-
                     {/* Actions */}
-                    <div className="px-4 pb-4 pt-1 flex gap-2">
-                      <Button variant="outline" className="w-full text-xs font-semibold h-8 rounded-lg border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 select-none bg-transparent">
-                        View Details
+                    <div className="px-4 pb-4 pt-1 flex justify-end gap-1.5">
+                      <Button
+                        onClick={() => handleVehicleEditClick(v)}
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 bg-transparent shrink-0"
+                      >
+                        <Edit2 className="h-4 w-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent shrink-0">
-                        <Settings className="h-4 w-4" />
+                      <Button
+                        onClick={() => handleVehicleDelete(v.id)}
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 bg-transparent shrink-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
-                    </div>
-                  </Card>
+                    </div>                  </Card>
                 )
               })}
             </div>
@@ -598,7 +711,25 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {driversList.map((driver) => (
                 <Card key={driver.id} className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl p-5 relative overflow-hidden group hover:border-zinc-400 dark:hover:border-zinc-700 transition-colors duration-200 flex flex-col justify-between h-52">
-                  <div className="flex gap-4">
+                  {/* Hover Actions */}
+                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1 bg-white/90 dark:bg-zinc-900/90 p-1 rounded-lg backdrop-blur-sm shadow-sm border border-zinc-200/50 dark:border-zinc-800/50">
+                    <Button
+                      onClick={() => handleDriverEditClick(driver)}
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 rounded-md text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent shrink-0"
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      onClick={() => handleDriverDelete(driver.id)}
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 rounded-md text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 bg-transparent shrink-0"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>                  <div className="flex gap-4">
                     {/* Driver Profile Image */}
                     <div className="h-16 w-16 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-800 shrink-0 bg-zinc-50 dark:bg-zinc-950">
                       <img 
@@ -1042,14 +1173,18 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
             <div className="flex items-center gap-3">
               <Button 
                 variant="ghost" 
-                onClick={() => setActiveTab('Vehicles')} 
+                onClick={handleCancelVehicle} 
                 className="h-8 w-8 p-0 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 bg-transparent"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <div>
-                <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">Register New Vehicle</h2>
-                <p className="text-xs text-zinc-400">Add a new commercial vehicle to the active fleet registry.</p>
+                <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+                  {editingVehicleId ? 'Edit Vehicle' : 'Register New Vehicle'}
+                </h2>
+                <p className="text-xs text-zinc-400">
+                  {editingVehicleId ? 'Update details of the registered vehicle.' : 'Add a new commercial vehicle to the active fleet registry.'}
+                </p>
               </div>
             </div>
 
@@ -1181,7 +1316,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                   <Button 
                     type="button" 
                     variant="outline" 
-                    onClick={() => setActiveTab('Vehicles')}
+                    onClick={handleCancelVehicle}
                     className="h-9 px-4 text-xs font-semibold rounded-lg border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 select-none bg-transparent"
                   >
                     Cancel
@@ -1190,7 +1325,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                     type="submit" 
                     className="h-9 px-4 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 select-none"
                   >
-                    Register Asset
+                    {editingVehicleId ? 'Save Changes' : 'Register Asset'}
                   </Button>
                 </CardFooter>
               </form>
@@ -1204,14 +1339,18 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
             <div className="flex items-center gap-3">
               <Button 
                 variant="ghost" 
-                onClick={() => setActiveTab('Drivers')} 
+                onClick={handleCancelDriver} 
                 className="h-8 w-8 p-0 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 bg-transparent"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <div>
-                <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">Register New Operator</h2>
-                <p className="text-xs text-zinc-400 font-medium">Add a new commercial driver profile to the fleet operations.</p>
+                <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+                  {editingDriverId ? 'Edit Operator' : 'Register New Operator'}
+                </h2>
+                <p className="text-xs text-zinc-400 font-medium">
+                  {editingDriverId ? 'Update details of the driver profile.' : 'Add a new commercial driver profile to the fleet operations.'}
+                </p>
               </div>
             </div>
 
@@ -1307,12 +1446,32 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                       />
                     </div>
                   </div>
+                  {editingDriverId && (
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <div className="space-y-1">
+                        <label className="text-xs uppercase font-bold text-zinc-400">Status</label>
+                        <div className="relative">
+                          <select 
+                            value={newDriver.status}
+                            onChange={(e) => setNewDriver({...newDriver, status: e.target.value})}
+                            className="w-full appearance-none pl-3 pr-8 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                          >
+                            <option value="Available">Available</option>
+                            <option value="OnTrip">On Trip</option>
+                            <option value="OffDuty">Off Duty</option>
+                            <option value="Suspended">Suspended</option>
+                          </select>
+                          <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
                 <CardFooter className="px-6 pb-6 pt-2 flex justify-end gap-3 border-t border-zinc-100 dark:border-zinc-800/80 mt-4">
                   <Button 
                     type="button" 
                     variant="outline" 
-                    onClick={() => setActiveTab('Drivers')}
+                    onClick={handleCancelDriver}
                     className="h-9 px-4 text-xs font-semibold rounded-lg border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 select-none bg-transparent"
                   >
                     Cancel
@@ -1321,7 +1480,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                     type="submit" 
                     className="h-9 px-4 text-xs font-semibold rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-800 select-none"
                   >
-                    Create Profile
+                    {editingDriverId ? 'Save Changes' : 'Create Profile'}
                   </Button>
                 </CardFooter>
               </form>

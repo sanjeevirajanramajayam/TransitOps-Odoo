@@ -91,11 +91,17 @@ router.put('/:id', validateRequest(updateVehicleSchema), async (req: Request, re
 router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params
-    const vehicle = await prisma.transitVehicle.update({
-      where: { id: parseInt(id as string) },
-      data: { status: VehicleStatus.Retired }
-    })
-    return sendResponse(res, 200, true, `Vehicle ${id} retired successfully`, vehicle)
+    const vehicleId = parseInt(id as string)
+
+    await prisma.$transaction([
+      prisma.transitExpense.deleteMany({ where: { vehicleId } }),
+      prisma.transitFuelLog.deleteMany({ where: { vehicleId } }),
+      prisma.transitMaintenanceLog.deleteMany({ where: { vehicleId } }),
+      prisma.transitTrip.deleteMany({ where: { vehicleId } }),
+      prisma.transitVehicle.delete({ where: { id: vehicleId } })
+    ])
+
+    return sendResponse(res, 200, true, 'Vehicle deleted successfully from database')
   } catch (err) {
     next(err)
   }

@@ -101,4 +101,21 @@ router.put('/:id', validateRequest(updateDriverSchema), async (req: Request, res
   }
 })
 
+router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params
+    const driverId = parseInt(id as string)
+
+    await prisma.$transaction([
+      // prisma.transitAlert.deleteMany({ where: { driverId } }),
+      prisma.transitTrip.deleteMany({ where: { driverId } }),
+      prisma.transitDriver.delete({ where: { id: driverId } })
+    ])
+
+    return sendResponse(res, 200, true, 'Driver deleted successfully from database')
+  } catch (err) {
+    next(err)
+  }
+})
+
 export default router
