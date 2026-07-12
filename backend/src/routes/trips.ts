@@ -225,4 +225,44 @@ router.post('/:id/cancel', async (req: Request, res: Response, next: NextFunctio
   }
 })
 
+const updateTripSchema = createTripSchema.partial()
+
+router.put('/:id', validateRequest(updateTripSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params
+    const trip = await prisma.transitTrip.findUniqueOrThrow({
+      where: { id: parseInt(id as string) }
+    })
+    if (trip.status !== TripStatus.Draft) {
+      return sendResponse(res, 400, false, 'Only Draft trips can be modified')
+    }
+    const updated = await prisma.transitTrip.update({
+      where: { id: parseInt(id as string) },
+      data: req.body
+    })
+    return sendResponse(res, 200, true, 'Trip updated successfully', updated)
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params
+    const trip = await prisma.transitTrip.findUniqueOrThrow({
+      where: { id: parseInt(id as string) }
+    })
+    if (trip.status !== TripStatus.Draft && trip.status !== TripStatus.Cancelled) {
+      return sendResponse(res, 400, false, 'Only Draft or Cancelled trips can be deleted')
+    }
+    await prisma.transitTrip.delete({
+      where: { id: parseInt(id as string) }
+    })
+    return sendResponse(res, 200, true, 'Trip deleted successfully')
+  } catch (err) {
+    next(err)
+  }
+})
+
 export default router
+

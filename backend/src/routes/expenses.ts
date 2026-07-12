@@ -142,7 +142,7 @@ router.put('/fuel/:id', validateRequest(createFuelLogSchema), async (req: Reques
 
     const log = await prisma.$transaction(async (tx) => {
       const updatedLog = await tx.transitFuelLog.update({
-        where: { id: parseInt(id) },
+        where: { id: parseInt(id as string) },
         data: {
           vehicleId: vehicle.id,
           liters,
@@ -175,7 +175,7 @@ router.put('/other/:id', validateRequest(createExpenseSchema), async (req: Reque
     const vehicle = await getOrCreateVehicle(vehicleReg)
 
     const expense = await prisma.transitExpense.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id as string) },
       data: {
         vehicleId: vehicle.id,
         expenseType,
@@ -196,7 +196,7 @@ router.delete('/fuel/:id', async (req: Request, res: Response, next: NextFunctio
   try {
     const { id } = req.params
     await prisma.transitFuelLog.delete({
-      where: { id: parseInt(id) }
+      where: { id: parseInt(id as string) }
     })
     return sendResponse(res, 200, true, 'Fuel log deleted successfully')
   } catch (err) {
@@ -209,7 +209,7 @@ router.delete('/other/:id', async (req: Request, res: Response, next: NextFuncti
   try {
     const { id } = req.params
     await prisma.transitExpense.delete({
-      where: { id: parseInt(id) }
+      where: { id: parseInt(id as string) }
     })
     return sendResponse(res, 200, true, 'Expense deleted successfully')
   } catch (err) {
@@ -223,7 +223,7 @@ router.get('/vehicle/:id', async (req: Request, res: Response, next: NextFunctio
     const { id } = req.params
 
     const vehicle = await prisma.transitVehicle.findUnique({
-      where: { id: parseInt(id) }
+      where: { id: parseInt(id as string) }
     })
     if (!vehicle) {
       return sendResponse(res, 404, false, 'Vehicle not found')
