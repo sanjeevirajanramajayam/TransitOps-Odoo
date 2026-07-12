@@ -311,6 +311,7 @@ export default function DispatcherView({ activeSubTab }) {
     } catch (err) {
       setError('Network error: Could not reach the server')
     }
+  }
 
   // Open Edit Form
   const handleEdit = (trip) => {
@@ -366,11 +367,10 @@ export default function DispatcherView({ activeSubTab }) {
     return matchesSearch && matchesStatus
   })
 
-  const renderContent = () => {
-    switch (activeSubTab) {
-      case 'Fleet':
-        return (
-          <div className="space-y-6">
+  return (
+    <div className="space-y-6">
+      {activeSubTab === 'Fleet' && (
+        <div className="space-y-6">
             <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
               <div className="relative w-full md:w-80">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
@@ -398,7 +398,6 @@ export default function DispatcherView({ activeSubTab }) {
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
               </div>
             </div>
-          </div>
 
           {loading ? (
             <p className="text-xs text-zinc-500">Loading fleet data...</p>
@@ -462,8 +461,12 @@ export default function DispatcherView({ activeSubTab }) {
             </Button>
           </div>
 
-            {success && <div className="p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-emerald-500">{success}</div>}
+            {success && <div className="p-3 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-emerald-500">{success}</div>}
 
+          {isFormOpen && (
+            <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-xl">
+              <form onSubmit={handleTripSubmit}>
+                <CardContent className="p-6 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-xs uppercase font-bold text-zinc-400">Trip Origin (Source)</label>
