@@ -867,7 +867,7 @@ export default function FleetManagerView({ activeSubTab, setActiveTab }) {
                       >
                         <option value="">Choose vehicle...</option>
                         {vehicles.map(v => (
-                          <option key={v.id} value={v.id} disabled={v.status === 'In Shop'}>
+                          <option key={v.id} value={v.id} disabled={v.status === 'In Shop' || v.status === 'On Trip' || v.status === 'Retired'}>
                             {v.reg} ({v.model}) [{v.status}]
                           </option>
                         ))}
